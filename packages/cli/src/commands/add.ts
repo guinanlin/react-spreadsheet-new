@@ -26,7 +26,7 @@ export async function add(components: string[], options: AddOptions) {
     console.log(chalk.yellow('\n⚠️  未找到配置文件，使用默认配置'));
     console.log(chalk.dim('提示: 运行 `npx @goodhawk/react-spreadsheet-cli init` 创建配置文件\n'));
     config = {
-      components: { path: 'src/components/ui' },
+      components: { path: 'components/ui' },
       aliases: { components: '@/components' },
     };
   }

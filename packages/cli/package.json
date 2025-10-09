@@ -1,6 +1,6 @@
 {
   "name": "@goodhawk/react-spreadsheet-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "CLI tool for adding React Spreadsheet components to your project",
   "author": "goodhawk",
   "license": "MIT",

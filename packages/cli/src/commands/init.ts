@@ -15,7 +15,7 @@ const DEFAULT_CONFIG = {
   $schema: 'https://react-spreadsheet.dev/schema.json',
   style: 'default',
   components: {
-    path: 'src/components/ui',
+    path: 'components/ui',
   },
   aliases: {
     components: '@/components',
