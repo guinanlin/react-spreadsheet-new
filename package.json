@@ -23,6 +23,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "build": "rollup -c",
+    "sync-templates": "node scripts/sync-templates.js",
     "prepack": "cross-env NODE_ENV=production yarn build",
     "check-typing": "tsc",
     "build-typedoc": "typedoc",

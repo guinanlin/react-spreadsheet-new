@@ -97,6 +97,20 @@ uv sync
 uv run pivot_api.py
 ```
 
+
+发布成功后，用户就可以这样使用了：
+
+```bash
+# 初始化
+npx @goodhawk/react-spreadsheet-cli init
+
+# 添加组件
+npx @goodhawk/react-spreadsheet-cli add spreadsheet
+npx @goodhawk/react-spreadsheet-cli add pivot-table
+```
+
+试试看吧！🚀
+
 更多后端信息请参考 [backend/README.md](backend/README.md)
 
 ## 功能特性 (Features)

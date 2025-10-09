@@ -1,0 +1,99 @@
+{
+  "$schema": "https://react-spreadsheet.dev/registry.json",
+  "components": {
+    "spreadsheet": {
+      "name": "spreadsheet",
+      "description": "Basic spreadsheet component with cell editing",
+      "type": "components:ui",
+      "files": [
+        "Spreadsheet.tsx",
+        "Spreadsheet.css",
+        "Cell.tsx",
+        "Table.tsx",
+        "Row.tsx",
+        "HeaderRow.tsx",
+        "ActiveCell.tsx",
+        "DataEditor.tsx",
+        "DataViewer.tsx",
+        "Selected.tsx",
+        "Copied.tsx",
+        "FloatingRect.tsx",
+        "ColumnIndicator.tsx",
+        "RowIndicator.tsx",
+        "CornerIndicator.tsx",
+        "types.ts",
+        "util.ts",
+        "context.ts",
+        "reducer.ts",
+        "actions.ts",
+        "selection.ts",
+        "point.ts",
+        "point-range.ts",
+        "matrix.ts",
+        "areModelsEqual.ts",
+        "use-dispatch.ts",
+        "use-selector.ts"
+      ],
+      "dependencies": [
+        "classnames",
+        "fast-formula-parser",
+        "use-context-selector",
+        "react-dnd",
+        "react-dnd-html5-backend"
+      ]
+    },
+    "pivot-table": {
+      "name": "pivot-table",
+      "description": "Advanced pivot table with server-side aggregation",
+      "type": "components:ui",
+      "files": [
+        "PivotTable.tsx",
+        "PivotTable.css",
+        "PivotCell.tsx",
+        "PivotCell.css",
+        "PivotHeaders.tsx",
+        "PivotHeaders.css",
+        "PivotFieldSelector.tsx",
+        "PivotFieldSelector.css",
+        "OptimizedPivotEngine.tsx",
+        "PerformanceMonitor.tsx",
+        "PerformanceMonitor.css",
+        "ExportManager.tsx",
+        "ExportUI.tsx",
+        "ExportUI.css",
+        "DrillDownManager.tsx",
+        "DrillDownManager.css",
+        "types.ts",
+        "aggregations.ts",
+        "engine.ts",
+        "hooks.ts",
+        "api/ApiClient.ts",
+        "data/DataBinding.ts",
+        "data/ServerDataService.ts"
+      ],
+      "dependencies": [
+        "@tanstack/react-query",
+        "classnames",
+        "jspdf",
+        "xlsx",
+        "file-saver"
+      ]
+    },
+    "formula-engine": {
+      "name": "formula-engine",
+      "description": "Formula parser and calculation engine",
+      "type": "components:ui",
+      "files": [
+        "engine.ts",
+        "formula.ts",
+        "point-graph.ts",
+        "point-set.ts",
+        "point-hash.ts",
+        "index.ts"
+      ],
+      "dependencies": [
+        "fast-formula-parser"
+      ]
+    }
+  }
+}
