@@ -32,18 +32,18 @@ logger = logging.getLogger(__name__)
 class PivotField(BaseModel):
     id: str
     name: str
-    dataType: str = Field(..., regex="^(string|number|date|boolean)$")
+    dataType: str = Field(..., pattern="^(string|number|date|boolean)$")
     format: Optional[str] = None
 
 class PivotValueField(BaseModel):
     field: PivotField
-    aggregation: str = Field(..., regex="^(sum|count|avg|min|max|countDistinct)$")
+    aggregation: str = Field(..., pattern="^(sum|count|avg|min|max|countDistinct)$")
     format: Optional[str] = None
     displayName: Optional[str] = None
 
 class PivotFilter(BaseModel):
     field: PivotField
-    operator: str = Field(..., regex="^(equals|notEquals|contains|notContains|greaterThan|lessThan|greaterThanOrEqual|lessThanOrEqual|in|notIn|between|isEmpty|isNotEmpty)$")
+    operator: str = Field(..., pattern="^(equals|notEquals|contains|notContains|greaterThan|lessThan|greaterThanOrEqual|lessThanOrEqual|in|notIn|between|isEmpty|isNotEmpty)$")
     value: Any
     enabled: bool = True
 
@@ -101,7 +101,7 @@ class PivotResponse(BaseModel):
 class PivotDrillRequest(BaseModel):
     cacheKey: str
     path: List[str]
-    action: str = Field(..., regex="^(expand|collapse)$")
+    action: str = Field(..., pattern="^(expand|collapse)$")
 
 class DatasetInfo(BaseModel):
     id: str
@@ -111,7 +111,7 @@ class DatasetInfo(BaseModel):
     path: str
 
 class ExportConfig(BaseModel):
-    format: str = Field(..., regex="^(csv|excel|pdf|json)$")
+    format: str = Field(..., pattern="^(csv|excel|pdf|json)$")
     includeHeaders: bool = True
     includeSubtotals: bool = True
     includeGrandTotals: bool = True

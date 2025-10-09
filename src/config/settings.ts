@@ -3,6 +3,8 @@
  * Manages API URLs, authentication settings, and other configuration options
  */
 
+import * as React from 'react';
+
 export interface SpreadsheetSettings {
   api: {
     baseUrl: string;
@@ -216,10 +218,15 @@ export class SettingsManager {
     const testUrl = url || this.settings.api.baseUrl;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(`${testUrl}/health`, {
         method: 'GET',
-        timeout: 5000
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       return response.ok;
     } catch {
       return false;
