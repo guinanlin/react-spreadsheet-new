@@ -32,7 +32,13 @@
         "matrix.ts",
         "areModelsEqual.ts",
         "use-dispatch.ts",
-        "use-selector.ts"
+        "use-selector.ts",
+        "engine/engine.ts",
+        "engine/formula.ts",
+        "engine/point-graph.ts",
+        "engine/point-set.ts",
+        "engine/point-hash.ts",
+        "engine/index.ts"
       ],
       "dependencies": [
         "classnames",

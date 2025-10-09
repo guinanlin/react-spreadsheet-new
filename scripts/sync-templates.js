@@ -93,6 +93,9 @@ const COMPONENTS = {
       'use-dispatch.ts',
       'use-selector.ts',
     ],
+    subdirs: {
+      'engine': ['engine.ts', 'formula.ts', 'point-graph.ts', 'point-set.ts', 'point-hash.ts', 'index.ts'],
+    },
     dependencies: [
       'classnames',
       'fast-formula-parser',
