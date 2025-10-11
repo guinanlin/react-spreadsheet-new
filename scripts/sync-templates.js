@@ -70,6 +70,8 @@ const COMPONENTS = {
       'types.ts',
       'components/Spreadsheet.tsx',
       'components/Spreadsheet.css',
+      'components/Workbook.tsx',
+      'components/Workbook.css',
       'components/index.ts',
     ],
     subdirs: {
@@ -77,6 +79,7 @@ const COMPONENTS = {
       'components/layout': ['HeaderRow.tsx', 'Row.tsx', 'Table.tsx', 'index.ts'],
       'components/overlays': ['Copied.tsx', 'FloatingRect.tsx', 'Selected.tsx', 'index.ts'],
       'components/indicators': ['ColumnIndicator.tsx', 'RowIndicator.tsx', 'CornerIndicator.tsx', 'index.ts'],
+      'components/tabs': ['SheetTabs.tsx', 'SheetTabs.css'],
       'core': ['actions.ts', 'areModelsEqual.ts', 'context.ts', 'reducer.ts', 'util.ts'],
       'data-structures': ['matrix.ts', 'point.ts', 'point-range.ts', 'selection.ts', 'index.ts'],
       'engine': ['engine.ts', 'formula.ts', 'point-graph.ts', 'point-hash.ts', 'point-set.ts', 'index.ts'],
