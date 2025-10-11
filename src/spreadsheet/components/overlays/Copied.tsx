@@ -1,7 +1,7 @@
-import * as React from "react";
+﻿import * as React from "react";
 import FloatingRect from "./FloatingRect";
-import { getRangeDimensions } from "./util";
-import useSelector from "./use-selector";
+import { getRangeDimensions } from "../../core/util";
+import useSelector from "../../hooks/use-selector";
 
 const Copied: React.FC = () => {
   const range = useSelector((state) => state.copied);

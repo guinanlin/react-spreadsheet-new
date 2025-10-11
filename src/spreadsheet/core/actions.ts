@@ -1,12 +1,12 @@
-import { Matrix } from "./matrix";
-import { Point } from "./point";
+﻿import { Matrix } from "../data-structures/matrix";
+import { Point } from "../data-structures/point";
 import {
   CellBase,
   Dimensions,
   CommitChanges,
   CreateFormulaParser,
-} from "./types";
-import { Selection } from "./selection";
+} from "../types";
+import { Selection } from "../data-structures/selection";
 
 export const SET_DATA = "SET_DATA";
 export const SET_CREATE_FORMULA_PARSER = "SET_CREATE_FORMULA_PARSER";

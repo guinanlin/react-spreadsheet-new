@@ -1,4 +1,4 @@
-import * as Matrix from "./matrix";
+﻿import * as Matrix from "./matrix";
 import * as Point from "./point";
 
 const createExampleMatrix = (): Matrix.Matrix<number> => [

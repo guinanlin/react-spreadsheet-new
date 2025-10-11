@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Interface for ranges between two points
  */
 

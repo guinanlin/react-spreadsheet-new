@@ -1,6 +1,6 @@
-import FormulaParser, { FormulaError, Value } from "fast-formula-parser";
-import * as Matrix from "../matrix";
-import { Point } from "../point";
+﻿import FormulaParser, { FormulaError, Value } from "fast-formula-parser";
+import * as Matrix from "../data-structures/matrix";
+import { Point } from "../data-structures/point";
 import { CellBase, CreateFormulaParser } from "../types";
 import * as Formula from "./formula";
 import { PointGraph } from "./point-graph";

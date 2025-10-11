@@ -1,13 +1,13 @@
 import * as React from "react";
 import classNames from "classnames";
-import * as Types from "./types";
-import * as Actions from "./actions";
-import * as Matrix from "./matrix";
-import * as Point from "./point";
-import { Selection } from "./selection";
-import reducer, { INITIAL_STATE, hasKeyDownHandler } from "./reducer";
-import context from "./context";
-import { Model, createFormulaParser } from "./engine";
+import * as Types from "../types";
+import * as Actions from "../core/actions";
+import * as Matrix from "../data-structures/matrix";
+import * as Point from "../data-structures/point";
+import { Selection } from "../data-structures/selection";
+import reducer, { INITIAL_STATE, hasKeyDownHandler } from "../core/reducer";
+import context from "../core/context";
+import { Model, createFormulaParser } from "../engine";
 import {
   range,
   readTextFromClipboard,
@@ -16,26 +16,26 @@ import {
   getCSV,
   shouldHandleClipboardEvent,
   isFocusedWithin,
-} from "./util";
+} from "../core/util";
 
-import DefaultTable from "./Table";
-import DefaultRow from "./Row";
-import DefaultHeaderRow from "./HeaderRow";
+import DefaultTable from "./layout/Table";
+import DefaultRow from "./layout/Row";
+import DefaultHeaderRow from "./layout/HeaderRow";
 import DefaultCornerIndicator, {
   enhance as enhanceCornerIndicator,
-} from "./CornerIndicator";
+} from "./indicators/CornerIndicator";
 import DefaultColumnIndicator, {
   enhance as enhanceColumnIndicator,
-} from "./ColumnIndicator";
+} from "./indicators/ColumnIndicator";
 import DefaultRowIndicator, {
   enhance as enhanceRowIndicator,
-} from "./RowIndicator";
-import { Cell as DefaultCell, enhance as enhanceCell } from "./Cell";
-import DefaultDataViewer from "./DataViewer";
-import DefaultDataEditor from "./DataEditor";
-import ActiveCell from "./ActiveCell";
-import Selected from "./Selected";
-import Copied from "./Copied";
+} from "./indicators/RowIndicator";
+import { Cell as DefaultCell, enhance as enhanceCell } from "./cells/Cell";
+import DefaultDataViewer from "./cells/DataViewer";
+import DefaultDataEditor from "./cells/DataEditor";
+import ActiveCell from "./cells/ActiveCell";
+import Selected from "./overlays/Selected";
+import Copied from "./overlays/Copied";
 
 import "./Spreadsheet.css";
 
@@ -80,6 +80,16 @@ export type Props<CellType extends Types.CellBase> = {
    * @defaultValue `false`.
    */
   hideColumnIndicators?: boolean;
+  /**
+   * Width of the row indicators (left side sequence numbers).
+   * @defaultValue `"20px"`.
+   */
+  rowIndicatorWidth?: string;
+  /**
+   * Width of the column indicators (top side sequence letters).
+   * @defaultValue `"50px"`.
+   */
+  columnIndicatorWidth?: string;
   /** The selected cells in the worksheet. */
   selected?: Selection;
   // Custom Components
@@ -149,6 +159,8 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
     rowLabels,
     hideColumnIndicators,
     hideRowIndicators,
+    rowIndicatorWidth = "50px",
+    columnIndicatorWidth = "50px",
     onKeyDown,
     Table = DefaultTable,
     Row = DefaultRow,
@@ -479,7 +491,7 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
 
   const tableNode = React.useMemo(
     () => (
-      <Table columns={size.columns} hideColumnIndicators={hideColumnIndicators}>
+      <Table columns={size.columns} hideColumnIndicators={hideColumnIndicators} rowIndicatorWidth={rowIndicatorWidth}>
         <HeaderRow>
           {!hideRowIndicators && !hideColumnIndicators && <CornerIndicator />}
           {!hideColumnIndicators &&
@@ -529,6 +541,7 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
       size.rows,
       size.columns,
       hideColumnIndicators,
+      rowIndicatorWidth,
       Row,
       HeaderRow,
       hideRowIndicators,
@@ -559,6 +572,10 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
         className={classNames("Spreadsheet", className, {
           "Spreadsheet--dark-mode": darkMode,
         })}
+        style={{
+          "--row-indicator-width": rowIndicatorWidth,
+          "--column-indicator-width": columnIndicatorWidth,
+        } as React.CSSProperties}
         onKeyPress={onKeyPress}
         onKeyDown={handleKeyDown}
         onMouseMove={handleMouseMove}
@@ -573,6 +590,8 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
     [
       className,
       darkMode,
+      rowIndicatorWidth,
+      columnIndicatorWidth,
       onKeyPress,
       handleKeyDown,
       handleMouseMove,

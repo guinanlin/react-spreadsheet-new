@@ -1,4 +1,4 @@
-import * as Point from "./point";
+﻿import * as Point from "./point";
 
 const EXAMPLE_POINT: Point.Point = { row: 0, column: 0 };
 const EXAMPLE_POINT_COPY: Point.Point = { row: 0, column: 0 };

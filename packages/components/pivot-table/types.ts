@@ -1,5 +1,5 @@
-import { Matrix } from "../matrix";
-import { Point } from "../point";
+import { Matrix } from "../spreadsheet/data-structures/matrix";
+import { Point } from "../spreadsheet/data-structures/point";
 
 /** Raw data structure for pivot tables */
 export type PivotDataRow = Record<string, any>;

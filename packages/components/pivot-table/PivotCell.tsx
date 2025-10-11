@@ -1,7 +1,7 @@
 import * as React from 'react';
 import classNames from 'classnames';
-import { CellComponentProps, CellBase } from '../types';
-import { Point } from '../point';
+import { CellComponentProps, CellBase } from '../spreadsheet/types';
+import { Point } from '../spreadsheet/data-structures/point';
 import { PivotCell as PivotCellData, PivotEventHandlers } from './types';
 import './PivotCell.css';
 

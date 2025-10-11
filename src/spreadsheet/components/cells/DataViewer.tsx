@@ -1,7 +1,7 @@
 import * as React from "react";
 import classNames from "classnames";
-import * as Types from "./types";
-import { hasLineBreaker } from "./util";
+import * as Types from "../../types";
+import { hasLineBreaker } from "../../core/util";
 
 export const TRUE_TEXT = "TRUE";
 export const FALSE_TEXT = "FALSE";

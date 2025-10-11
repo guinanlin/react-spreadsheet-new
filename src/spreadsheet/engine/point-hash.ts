@@ -1,4 +1,4 @@
-import { Point } from "../point";
+﻿import { Point } from "../data-structures/point";
 
 export function toString(point: Point): string {
   return `${point.row},${point.column}`;

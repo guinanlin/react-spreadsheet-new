@@ -1,13 +1,13 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
-import { Model, createFormulaParser } from "./engine";
-import * as Matrix from "./matrix";
-import * as Point from "./point";
-import { PointRange } from "./point-range";
-import { Selection, EmptySelection, RangeSelection } from "./selection";
-import * as Types from "./types";
+import { Model, createFormulaParser } from "../engine";
+import * as Matrix from "../data-structures/matrix";
+import * as Point from "../data-structures/point";
+import { PointRange } from "../data-structures/point-range";
+import { Selection, EmptySelection, RangeSelection } from "../data-structures/selection";
+import * as Types from "../types";
 import * as util from "./util";
 
 const EXAMPLE_INPUT_VALUE = "EXAMPLE_INPUT_VALUE";

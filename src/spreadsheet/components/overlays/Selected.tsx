@@ -1,7 +1,7 @@
-import * as React from "react";
-import { getSelectedDimensions } from "./util";
+﻿import * as React from "react";
+import { getSelectedDimensions } from "../../core/util";
 import FloatingRect from "./FloatingRect";
-import useSelector from "./use-selector";
+import useSelector from "../../hooks/use-selector";
 
 const Selected: React.FC = () => {
   const selected = useSelector((state) => state.selected);

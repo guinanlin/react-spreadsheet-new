@@ -1,13 +1,13 @@
-import FormulaParser, {
+﻿import FormulaParser, {
   CellRef,
   DepParser,
   FormulaError,
   FormulaParserConfig,
   Value,
 } from "fast-formula-parser";
-import { PointRange } from "../point-range";
-import { Point } from "../point";
-import * as Matrix from "../matrix";
+import { PointRange } from "../data-structures/point-range";
+import { Point } from "../data-structures/point";
+import * as Matrix from "../data-structures/matrix";
 import { CellBase } from "../types";
 import { PointSet } from "./point-set";
 

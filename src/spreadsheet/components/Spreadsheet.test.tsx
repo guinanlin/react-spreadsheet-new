@@ -1,22 +1,22 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import Spreadsheet, { Props, SpreadsheetRef } from "./Spreadsheet";
-import * as Matrix from "./matrix";
-import * as Types from "./types";
-import * as Point from "./point";
-import { createEmptyMatrix } from "./util";
-import { createFormulaParser } from "./engine";
+import * as Matrix from "../data-structures/matrix";
+import * as Types from "../types";
+import * as Point from "../data-structures/point";
+import { createEmptyMatrix } from "../core/util";
+import { createFormulaParser } from "../engine";
 import {
   EntireWorksheetSelection,
   EntireRowsSelection,
   EntireColumnsSelection,
   RangeSelection,
-} from "./selection";
-import { PointRange } from "./point-range";
+} from "../data-structures/selection";
+import { PointRange } from "../data-structures/point-range";
 
 type Value = string;
 type CellType = Types.CellBase<Value>;

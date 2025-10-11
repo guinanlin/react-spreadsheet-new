@@ -1,4 +1,4 @@
-import * as Point from "./point";
+﻿import * as Point from "./point";
 import { PointRange } from "./point-range";
 import * as Matrix from "./matrix";
 import {

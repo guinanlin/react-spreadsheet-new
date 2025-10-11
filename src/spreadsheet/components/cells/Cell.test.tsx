@@ -1,13 +1,13 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
 import React from "react";
 import { fireEvent, render } from "@testing-library/react";
 import { Cell } from "./Cell";
-import * as Types from "./types";
-import * as Point from "./point";
-import { getOffsetRect } from "./util";
+import * as Types from "../../types";
+import * as Point from "../../data-structures/point";
+import { getOffsetRect } from "../../core/util";
 
 const MOCK_DATA_VIEWER = jest.fn(() => null);
 const MOCK_CUSTOM_DATA_VIEWER = jest.fn(() => null);

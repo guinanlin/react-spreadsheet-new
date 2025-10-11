@@ -1,19 +1,19 @@
-import * as React from "react";
+﻿import * as React from "react";
 import type { StoryFn, Meta, StoryObj } from "@storybook/react";
 import {
   createEmptyMatrix,
   Spreadsheet,
-  Props,
+  type Props,
   CellBase,
   EntireWorksheetSelection,
   Selection,
   EntireRowsSelection,
   EntireColumnsSelection,
   EmptySelection,
-  Point,
-  SpreadsheetRef,
+  type Point,
+  type SpreadsheetRef,
 } from "..";
-import * as Matrix from "../matrix";
+import * as Matrix from "../data-structures/matrix";
 import { AsyncCellDataEditor, AsyncCellDataViewer } from "./AsyncCellData";
 import CustomCell from "./CustomCell";
 import { RangeEdit, RangeView } from "./RangeDataComponents";
@@ -61,7 +61,18 @@ const meta: Meta<Props<StringCell>> = {
 export default meta;
 
 export const Basic: StoryObj = {
-  args: {},
+  args: {
+    data: [
+      [12, 3, 3, 4, 88],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ],
+      rowIndicatorWidth: "30px",
+      columnIndicatorWidth: "50px",
+  },
 };
 
 export const DarkMode: StoryObj = {
@@ -351,4 +362,20 @@ export const ControlledActivation: StoryFn<Props<StringCell>> = (props) => {
       <Spreadsheet ref={spreadsheetRef} {...props} />;
     </div>
   );
+};
+
+export const BasicSheet: StoryObj = {
+  args: {
+    data: [
+      [12, 3, 3, 4, 88],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null],
+      [null, null, null, null]
+    ],
+
+    rowIndicatorWidth: "30px",
+    columnIndicatorWidth: "80px"
+  }
 };

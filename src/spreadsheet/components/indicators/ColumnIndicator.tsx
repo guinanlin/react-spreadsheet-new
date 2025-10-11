@@ -1,9 +1,9 @@
-import * as React from "react";
+﻿import * as React from "react";
 import classNames from "classnames";
-import * as Types from "./types";
-import * as Actions from "./actions";
-import useDispatch from "./use-dispatch";
-import useSelector from "./use-selector";
+import * as Types from "../../types";
+import * as Actions from "../../core/actions";
+import useDispatch from "../../hooks/use-dispatch";
+import useSelector from "../../hooks/use-selector";
 
 const ColumnIndicator: Types.ColumnIndicatorComponent = ({
   column,
@@ -19,7 +19,7 @@ const ColumnIndicator: Types.ColumnIndicatorComponent = ({
   );
   return (
     <th
-      className={classNames("Spreadsheet__header", {
+      className={classNames("Spreadsheet__header", "Spreadsheet__header--column", {
         "Spreadsheet__header--selected": selected,
       })}
       onClick={handleClick}

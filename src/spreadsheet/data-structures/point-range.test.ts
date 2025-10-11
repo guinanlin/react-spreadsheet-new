@@ -1,4 +1,4 @@
-import { PointRange } from "./point-range";
+﻿import { PointRange } from "./point-range";
 import * as Point from "./point";
 
 const POINT_0_1: Point.Point = { row: 0, column: 1 };

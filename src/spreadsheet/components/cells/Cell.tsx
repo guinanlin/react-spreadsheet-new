@@ -1,12 +1,12 @@
 import * as React from "react";
 import classnames from "classnames";
-import * as Matrix from "./matrix";
-import * as Types from "./types";
-import * as Point from "./point";
-import * as Actions from "./actions";
-import { isActive, getOffsetRect } from "./util";
-import useDispatch from "./use-dispatch";
-import useSelector from "./use-selector";
+import * as Matrix from "../../data-structures/matrix";
+import * as Types from "../../types";
+import * as Point from "../../data-structures/point";
+import * as Actions from "../../core/actions";
+import { isActive, getOffsetRect } from "../../core/util";
+import useDispatch from "../../hooks/use-dispatch";
+import useSelector from "../../hooks/use-selector";
 
 export const Cell: React.FC<Types.CellComponentProps> = ({
   row,

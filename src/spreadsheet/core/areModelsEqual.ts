@@ -1,5 +1,5 @@
-import {} from "jest";
-import { Model } from "./engine";
+﻿import {} from "jest";
+import { Model } from "../engine";
 
 function areModelsEqual(a: unknown, b: unknown): boolean | undefined {
   const isAModule = a instanceof Model;

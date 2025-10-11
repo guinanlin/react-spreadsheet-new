@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { createContext } from "use-context-selector";
 import reducer, { INITIAL_STATE } from "./reducer";
 import { Action } from "./actions";

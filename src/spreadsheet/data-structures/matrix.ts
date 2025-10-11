@@ -1,4 +1,4 @@
-import * as Point from "./point";
+﻿import * as Point from "./point";
 
 /** A two-dimensional array of given type T in rows and columns */
 export type Matrix<T> = Array<Array<T | undefined>>;

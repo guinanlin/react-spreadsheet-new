@@ -1,10 +1,10 @@
-import * as Types from "./types";
-import * as Matrix from "./matrix";
-import * as Point from "./point";
-import { PointRange } from "./point-range";
-import { Selection } from "./selection";
+﻿import * as Types from "../types";
+import * as Matrix from "../data-structures/matrix";
+import * as Point from "../data-structures/point";
+import { PointRange } from "../data-structures/point-range";
+import { Selection } from "../data-structures/selection";
 
-export { createEmpty as createEmptyMatrix } from "./matrix";
+export { createEmpty as createEmptyMatrix } from "../data-structures/matrix";
 
 export const PLAIN_TEXT_MIME = "text/plain";
 export const FOCUS_WITHIN_SELECTOR = ":focus-within";

@@ -1,10 +1,10 @@
 import * as React from 'react';
 import classNames from 'classnames';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Spreadsheet from '../Spreadsheet';
-import { CellBase } from '../types';
-import { Point } from '../point';
-import { Selection } from '../selection';
+import Spreadsheet from '../spreadsheet';
+import { CellBase } from '../spreadsheet/types';
+import { Point } from '../spreadsheet/data-structures/point';
+import { Selection } from '../spreadsheet/data-structures/selection';
 import {
   PivotDataSet,
   PivotConfiguration,

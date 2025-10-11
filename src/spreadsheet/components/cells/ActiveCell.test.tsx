@@ -1,14 +1,14 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
 import * as React from "react";
 import { render, fireEvent } from "@testing-library/react";
-import * as Point from "./point";
-import * as Types from "./types";
-import * as Actions from "./actions";
-import context from "./context";
-import { INITIAL_STATE } from "./reducer";
+import * as Point from "../../data-structures/point";
+import * as Types from "../../types";
+import * as Actions from "../../core/actions";
+import context from "../../core/context";
+import { INITIAL_STATE } from "../../core/reducer";
 import ActiveCell from "./ActiveCell";
 import DataEditor from "./DataEditor";
 

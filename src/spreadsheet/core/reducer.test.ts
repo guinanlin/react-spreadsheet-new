@@ -1,5 +1,5 @@
-import * as React from "react";
-import * as Types from "./types";
+﻿import * as React from "react";
+import * as Types from "../types";
 import * as Actions from "./actions";
 import reducer, {
   INITIAL_STATE,
@@ -12,9 +12,9 @@ import reducer, {
   Direction,
 } from "./reducer";
 import { createEmptyMatrix } from "./util";
-import * as Point from "./point";
-import * as Matrix from "./matrix";
-import { PointRange } from "./point-range";
+import * as Point from "../data-structures/point";
+import * as Matrix from "../data-structures/matrix";
+import { PointRange } from "../data-structures/point-range";
 import {
   Selection,
   RangeSelection,
@@ -22,9 +22,9 @@ import {
   EntireRowsSelection,
   EntireColumnsSelection,
   EmptySelection,
-} from "./selection";
+} from "../data-structures/selection";
 import "./areModelsEqual";
-import { Model, createFormulaParser } from "./engine";
+import { Model, createFormulaParser } from "../engine";
 
 const EDIT_STATE: Types.StoreState = { ...INITIAL_STATE, mode: "edit" };
 const EXAMPLE_DATA_ROWS_COUNT = 4;

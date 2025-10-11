@@ -1,4 +1,4 @@
-import { Matrix } from '../matrix';
+import { Matrix } from '../spreadsheet/data-structures/matrix';
 import {
   PivotDataSet,
   PivotDataRow,

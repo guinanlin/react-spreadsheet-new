@@ -1,12 +1,12 @@
 import * as React from "react";
 import classnames from "classnames";
-import * as Actions from "./actions";
-import * as Types from "./types";
-import * as Point from "./point";
-import useSelector from "./use-selector";
-import useDispatch from "./use-dispatch";
-import { getCellDimensions } from "./util";
-import * as Matrix from "./matrix";
+import * as Actions from "../../core/actions";
+import * as Types from "../../types";
+import * as Point from "../../data-structures/point";
+import useSelector from "../../hooks/use-selector";
+import useDispatch from "../../hooks/use-dispatch";
+import { getCellDimensions } from "../../core/util";
+import * as Matrix from "../../data-structures/matrix";
 
 type Props = {
   DataEditor: Types.DataEditorComponent;

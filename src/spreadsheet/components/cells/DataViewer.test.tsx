@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
@@ -9,7 +9,7 @@ import DataViewer, {
   FALSE_TEXT,
   TRUE_TEXT,
 } from "./DataViewer";
-import * as Types from "./types";
+import * as Types from "../../types";
 
 const MOCK_SET_CELL_DATA = jest.fn();
 const EXAMPLE_VALUE = "EXAMPLE_VALUE";

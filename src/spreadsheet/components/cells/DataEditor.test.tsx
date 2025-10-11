@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
@@ -6,8 +6,8 @@ import React from "react";
 import { fireEvent, render } from "@testing-library/react";
 import { waitFor } from "@testing-library/dom";
 import DataEditor from "./DataEditor";
-import * as Types from "./types";
-import * as Util from "./util";
+import * as Types from "../../types";
+import * as Util from "../../core/util";
 
 const MOVE_CURSOR_TO_END_MOCK = jest.spyOn(Util, "moveCursorToEnd");
 

@@ -1,7 +1,7 @@
-import { PointRange } from "./point-range";
-import * as Matrix from "./matrix";
-import * as Types from "./types";
-import * as Point from "./point";
+﻿import { PointRange } from "../data-structures/point-range";
+import * as Matrix from "../data-structures/matrix";
+import * as Types from "../types";
+import * as Point from "../data-structures/point";
 import {
   Selection,
   EmptySelection,
@@ -9,10 +9,10 @@ import {
   EntireColumnsSelection,
   EntireRowsSelection,
   EntireWorksheetSelection,
-} from "./selection";
+} from "../data-structures/selection";
 import { isActive } from "./util";
 import * as Actions from "./actions";
-import { Model, updateCellValue, createFormulaParser } from "./engine";
+import { Model, updateCellValue, createFormulaParser } from "../engine";
 
 export const INITIAL_STATE: Types.StoreState = {
   active: null,

@@ -1,10 +1,10 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import * as Types from "./types";
+import * as Types from "../../types";
 import ColumnIndicator from "./ColumnIndicator";
 
 const EXAMPLE_PROPS: Types.ColumnIndicatorProps = {

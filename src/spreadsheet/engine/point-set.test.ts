@@ -1,4 +1,4 @@
-import * as Point from "../point";
+﻿import * as Point from "../data-structures/point";
 import { PointSet } from "./point-set";
 
 const MIN_POINT = Point.ORIGIN;

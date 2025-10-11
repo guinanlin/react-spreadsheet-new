@@ -1,10 +1,10 @@
 import * as React from "react";
 import FormulaParser from "fast-formula-parser";
-import { Point } from "./point";
-import { Selection } from "./selection";
+import { Point } from "./data-structures/point";
+import { Selection } from "./data-structures/selection";
 import { Model } from "./engine";
-import { PointRange } from "./point-range";
-import { Matrix } from "./matrix";
+import { PointRange } from "./data-structures/point-range";
+import { Matrix } from "./data-structures/matrix";
 
 /** The base type of cell data in Spreadsheet */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,6 +140,8 @@ export type TableProps = React.PropsWithChildren<{
   columns: number;
   /** Whether column indicators are hidden */
   hideColumnIndicators?: boolean | null;
+  /** Width of the row indicators */
+  rowIndicatorWidth?: string;
 }>;
 
 /** Type of the Spreadsheet Table component */
@@ -209,3 +211,83 @@ export type CommitChanges<Cell extends CellBase = CellBase> = Array<{
 }>;
 
 export type CreateFormulaParser = (data: Matrix<CellBase>) => FormulaParser;
+
+// ============================================================================
+// Workbook Types (Multi-Sheet Support)
+// ============================================================================
+
+/** Configuration for a single sheet in a Workbook */
+export type WorkbookSheet<Cell extends CellBase = CellBase> = {
+  /** Unique identifier for the sheet */
+  id: string;
+  /** Display name of the sheet */
+  name: string;
+  /** The sheet's data matrix */
+  data: Matrix<Cell>;
+  /** Optional: Hide row indicators for this specific sheet */
+  hideRowIndicators?: boolean;
+  /** Optional: Hide column indicators for this specific sheet */
+  hideColumnIndicators?: boolean;
+  /** Optional: Labels to use in column indicators for this sheet */
+  columnLabels?: string[];
+  /** Optional: Labels to use in row indicators for this sheet */
+  rowLabels?: string[];
+};
+
+/** Props for the SheetTabs component */
+export type SheetTabsProps = {
+  /** List of sheets to display as tabs */
+  sheets: Array<{ id: string; name: string }>;
+  /** Currently active sheet ID */
+  activeSheetId: string;
+  /** Callback when a sheet tab is clicked */
+  onSheetChange: (sheetId: string) => void;
+  /** Use dark mode styling */
+  darkMode?: boolean;
+};
+
+/** Props for the Workbook component */
+export type WorkbookProps<Cell extends CellBase = CellBase> = {
+  /** Array of sheets in the workbook */
+  sheets: WorkbookSheet<Cell>[];
+  /** Default active sheet ID (uncontrolled mode) */
+  defaultActiveSheet?: string;
+  /** Active sheet ID (controlled mode) */
+  activeSheet?: string;
+  /** Callback when active sheet changes */
+  onSheetChange?: (sheetId: string) => void;
+  /** Class name to be added to the workbook's root element */
+  className?: string;
+  /** Use dark colors that complement dark mode */
+  darkMode?: boolean;
+  /** Width of the row indicators (applies to all sheets) */
+  rowIndicatorWidth?: string;
+  /** Width of the column indicators (applies to all sheets) */
+  columnIndicatorWidth?: string;
+  /** Component rendered above each column */
+  ColumnIndicator?: ColumnIndicatorComponent;
+  /** Component rendered in the corner of row and column indicators */
+  CornerIndicator?: CornerIndicatorComponent;
+  /** Component rendered next to each row */
+  RowIndicator?: RowIndicatorComponent;
+  /** The table component */
+  Table?: TableComponent;
+  /** The row component */
+  Row?: RowComponent;
+  /** The header row component */
+  HeaderRow?: HeaderRowComponent;
+  /** The cell component */
+  Cell?: CellComponent<Cell>;
+  /** Component rendered for cells in view mode */
+  DataViewer?: DataViewerComponent<Cell>;
+  /** Component rendered for cells in edit mode */
+  DataEditor?: DataEditorComponent<Cell>;
+  /** Function to create formula parser */
+  createFormulaParser?: CreateFormulaParser;
+  /** Callback called when any sheet's data changes */
+  onChange?: (sheetId: string, data: Matrix<Cell>) => void;
+  /** Callback called when edit mode changes */
+  onModeChange?: (mode: Mode) => void;
+  /** Callback called when selection changes */
+  onSelect?: (selected: Selection) => void;
+};

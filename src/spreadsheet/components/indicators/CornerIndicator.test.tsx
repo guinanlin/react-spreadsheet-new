@@ -1,10 +1,10 @@
-/**
+﻿/**
  * @jest-environment jsdom
  */
 
 import React from "react";
 import { render } from "@testing-library/react";
-import * as Types from "./types";
+import * as Types from "../../types";
 import CornerIndicator from "./CornerIndicator";
 
 const EXAMPLE_PROPS: Types.CornerIndicatorProps = {

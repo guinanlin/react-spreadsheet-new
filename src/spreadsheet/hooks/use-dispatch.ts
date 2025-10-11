@@ -1,5 +1,5 @@
-import { useContextSelector } from "use-context-selector";
-import context, { Dispatch } from "./context";
+﻿import { useContextSelector } from "use-context-selector";
+import context, { Dispatch } from "../core/context";
 
 function useDispatch(): Dispatch {
   return useContextSelector(context, ([state, dispatch]) => dispatch);

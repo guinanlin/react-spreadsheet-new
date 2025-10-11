@@ -1,10 +1,10 @@
-import * as React from "react";
+﻿import * as React from "react";
 import classNames from "classnames";
-import * as Actions from "./actions";
-import { EntireWorksheetSelection } from "./selection";
-import * as Types from "./types";
-import useDispatch from "./use-dispatch";
-import useSelector from "./use-selector";
+import * as Actions from "../../core/actions";
+import { EntireWorksheetSelection } from "../../data-structures/selection";
+import * as Types from "../../types";
+import useDispatch from "../../hooks/use-dispatch";
+import useSelector from "../../hooks/use-selector";
 
 const CornerIndicator: Types.CornerIndicatorComponent = ({
   selected,

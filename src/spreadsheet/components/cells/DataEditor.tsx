@@ -1,6 +1,6 @@
 import * as React from "react";
-import * as Types from "./types";
-import { moveCursorToEnd } from "./util";
+import * as Types from "../../types";
+import { moveCursorToEnd } from "../../core/util";
 
 /** The default Spreadsheet DataEditor component */
 const DataEditor: React.FC<Types.DataEditorProps> = ({ onChange, cell }) => {
