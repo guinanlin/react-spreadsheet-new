@@ -83,29 +83,48 @@ const ColumnIndicator: Types.ColumnIndicatorComponent = ({
       return;
     }
 
+    let rafId: number | null = null;
+
     const handleGlobalMouseMove = (event: MouseEvent) => {
       if (!resizeStateRef.current) return;
 
-      const deltaX = event.clientX - resizeStateRef.current.startX;
-      const newWidth = Math.max(
-        MIN_COLUMN_WIDTH,
-        resizeStateRef.current.startWidth + deltaX
-      );
+      // 使用 requestAnimationFrame 优化性能，确保在生产环境中也能正常工作
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
 
-      // 实时更新列宽
-      dispatch(Actions.setColumnWidth(resizeStateRef.current.column, newWidth));
+      rafId = requestAnimationFrame(() => {
+        if (!resizeStateRef.current) return;
+
+        const deltaX = event.clientX - resizeStateRef.current.startX;
+        const newWidth = Math.max(
+          MIN_COLUMN_WIDTH,
+          resizeStateRef.current.startWidth + deltaX
+        );
+
+        // 实时更新列宽
+        dispatch(Actions.setColumnWidth(resizeStateRef.current.column, newWidth));
+        rafId = null;
+      });
     };
 
     const handleGlobalMouseUp = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       setIsResizing(false);
       setShowResizeCursor(false);
       resizeStateRef.current = null;
     };
 
-    document.addEventListener("mousemove", handleGlobalMouseMove);
+    document.addEventListener("mousemove", handleGlobalMouseMove, { passive: false });
     document.addEventListener("mouseup", handleGlobalMouseUp);
 
     return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       document.removeEventListener("mousemove", handleGlobalMouseMove);
       document.removeEventListener("mouseup", handleGlobalMouseUp);
     };
