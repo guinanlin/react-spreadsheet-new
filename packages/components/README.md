@@ -13,7 +13,7 @@ Basic spreadsheet component with cell editing
 npx @react-spreadsheet/cli add spreadsheet
 ```
 
-**文件数量:** 0  
+**文件数量:** 33  
 **依赖:** classnames, fast-formula-parser, use-context-selector, react-dnd, react-dnd-html5-backend
 
 
@@ -37,7 +37,7 @@ Formula parser and calculation engine
 npx @react-spreadsheet/cli add formula-engine
 ```
 
-**文件数量:** 0  
+**文件数量:** 6  
 **依赖:** fast-formula-parser
 
 
