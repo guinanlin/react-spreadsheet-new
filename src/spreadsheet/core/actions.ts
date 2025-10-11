@@ -30,6 +30,7 @@ export const KEY_DOWN = "KEY_DOWN";
 export const DRAG_START = "DRAG_START";
 export const DRAG_END = "DRAG_END";
 export const COMMIT = "COMMIT";
+export const SET_COLUMN_WIDTH = "SET_COLUMN_WIDTH";
 
 export type BaseAction<T extends string> = {
   type: T;
@@ -276,6 +277,23 @@ export function blur(): BlurAction {
   return { type: BLUR };
 }
 
+export type SetColumnWidthAction = BaseAction<typeof SET_COLUMN_WIDTH> & {
+  payload: {
+    column: number;
+    width: number;
+  };
+};
+
+export function setColumnWidth(
+  column: number,
+  width: number
+): SetColumnWidthAction {
+  return {
+    type: SET_COLUMN_WIDTH,
+    payload: { column, width },
+  };
+}
+
 export type Action =
   | SetDataAction
   | SetCreateFormulaParserAction
@@ -298,4 +316,5 @@ export type Action =
   | EditAction
   | ViewAction
   | ClearAction
-  | BlurAction;
+  | BlurAction
+  | SetColumnWidthAction;

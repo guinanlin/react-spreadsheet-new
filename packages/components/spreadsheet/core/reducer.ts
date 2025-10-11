@@ -332,6 +332,21 @@ export default function reducer(
       return { ...state, ...commit(changes) };
     }
 
+    case Actions.SET_COLUMN_WIDTH: {
+      const { column, width } = action.payload;
+      const prevColumnDimension = state.columnDimensions[column];
+      return {
+        ...state,
+        columnDimensions: {
+          ...state.columnDimensions,
+          [column]: {
+            left: prevColumnDimension?.left || 0,
+            width,
+          },
+        },
+      };
+    }
+
     default:
       throw new Error("Unknown action");
   }

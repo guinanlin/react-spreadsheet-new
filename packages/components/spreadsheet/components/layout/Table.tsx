@@ -1,6 +1,7 @@
 ﻿import * as React from "react";
 import * as Types from "../../types";
 import { range } from "../../core/util";
+import useSelector from "../../hooks/use-selector";
 
 const Table: Types.TableComponent = ({
   children,
@@ -8,6 +9,7 @@ const Table: Types.TableComponent = ({
   hideColumnIndicators,
   rowIndicatorWidth,
 }) => {
+  const columnDimensions = useSelector((state) => state.columnDimensions);
   const columnCount = columns + (hideColumnIndicators ? 0 : 1);
   const columnNodes = range(columnCount).map((i) => {
     // 第一列是行号列，使用 CSS 变量控制宽度
@@ -24,7 +26,15 @@ const Table: Types.TableComponent = ({
         />
       );
     }
-    return <col key={i} />;
+    // 对于数据列，如果有设置的宽度则使用，否则使用默认值
+    const columnIndex = hideColumnIndicators ? i : i - 1;
+    const columnWidth = columnDimensions[columnIndex]?.width;
+    return (
+      <col 
+        key={i} 
+        style={columnWidth ? { width: `${columnWidth}px` } : undefined}
+      />
+    );
   });
   return (
     <table className="Spreadsheet__table">

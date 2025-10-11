@@ -74,6 +74,7 @@
   color: var(--readonly-text-color);
   text-align: center;
   font: inherit;
+  position: relative;
 }
 
 .Spreadsheet__header--row {
@@ -104,6 +105,25 @@
   min-width: var(--column-indicator-width) !important;
   width: var(--column-indicator-width) !important;
   max-width: var(--column-indicator-width) !important;
+}
+
+.Spreadsheet__header--resize-cursor {
+  cursor: col-resize !important;
+}
+
+.Spreadsheet__header--resizing {
+  cursor: col-resize !important;
+  user-select: none;
+}
+
+.Spreadsheet__column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
 }
 
 .Spreadsheet__header--selected {
