@@ -13,6 +13,7 @@ import {
 import { isActive } from "./util";
 import * as Actions from "./actions";
 import { Model, updateCellValue, createFormulaParser } from "../engine";
+import * as FillHandler from "./fill-handler";
 
 export const INITIAL_STATE: Types.StoreState = {
   active: null,
@@ -27,6 +28,8 @@ export const INITIAL_STATE: Types.StoreState = {
   selected: new EmptySelection(),
   copied: null,
   lastCommit: null,
+  filling: false,
+  fillRange: null,
 };
 
 export default function reducer(
@@ -344,6 +347,108 @@ export default function reducer(
             width,
           },
         },
+      };
+    }
+
+    case Actions.START_FILL: {
+      // console.log("START_FILL");
+      return {
+        ...state,
+        filling: true,
+        fillRange: null,
+      };
+    }
+
+    case Actions.FILL_DRAG: {
+      const { point } = action.payload;
+      const selectedRange = state.selected.toRange(state.model.data);
+      
+      if (!selectedRange || !state.filling) {
+        // console.log("FILL_DRAG: no selected range or not filling");
+        return state;
+      }
+
+      // 创建填充范围：从选中区域的边界到拖动点
+      // 确保填充范围包含选中区域和拖动到的区域
+      const fillRange = new PointRange(
+        {
+          row: Math.min(selectedRange.start.row, point.row),
+          column: Math.min(selectedRange.start.column, point.column),
+        },
+        {
+          row: Math.max(selectedRange.end.row, point.row),
+          column: Math.max(selectedRange.end.column, point.column),
+        }
+      );
+      
+      console.log("FILL_DRAG: selectedRange.start", selectedRange.start, "selectedRange.end", selectedRange.end);
+      console.log("FILL_DRAG: point", point);
+      console.log("FILL_DRAG: fillRange.start", fillRange.start, "fillRange.end", fillRange.end);
+      
+      return {
+        ...state,
+        fillRange,
+      };
+    }
+
+    case Actions.END_FILL: {
+      const { useSmartFill } = action.payload;
+      
+      console.log("END_FILL: useSmartFill", useSmartFill, "state.filling", state.filling, "state.fillRange", state.fillRange);
+      
+      if (!state.filling || !state.fillRange) {
+        console.log("END_FILL: not filling or no fillRange, returning");
+        return {
+          ...state,
+          filling: false,
+          fillRange: null,
+        };
+      }
+
+      const selectedRange = state.selected.toRange(state.model.data);
+      if (!selectedRange) {
+        console.log("END_FILL: no selectedRange, returning");
+        return {
+          ...state,
+          filling: false,
+          fillRange: null,
+        };
+      }
+
+      console.log("END_FILL: selectedRange.start", selectedRange.start, "selectedRange.end", selectedRange.end);
+      console.log("END_FILL: fillRange.start", state.fillRange.start, "fillRange.end", state.fillRange.end);
+
+      // 根据模式选择填充方法
+      const changes = useSmartFill
+        ? FillHandler.smartFill(state.model.data, selectedRange, state.fillRange)
+        : FillHandler.simpleCopy(state.model.data, selectedRange, state.fillRange);
+
+      console.log("END_FILL: changes", changes.size, "entries");
+
+      // 应用填充数据
+      const newData = FillHandler.applyFillData(state.model.data, changes);
+
+      // 创建 commit 记录
+      const commitChanges: Types.CellChange[] = [];
+      for (const [key, nextCell] of changes) {
+        const [row, column] = key.split(",").map(Number);
+        const point = { row, column };
+        const prevCell = Matrix.get(point, state.model.data);
+        commitChanges.push({
+          prevCell: prevCell || null,
+          nextCell,
+        });
+      }
+
+      console.log("END_FILL: applying", commitChanges.length, "changes");
+
+      return {
+        ...state,
+        model: new Model(state.model.createFormulaParser, newData),
+        filling: false,
+        fillRange: null,
+        lastCommit: commitChanges,
+        lastChanged: state.fillRange.end,
       };
     }
 

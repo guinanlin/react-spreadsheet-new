@@ -1,6 +1,7 @@
 ﻿import * as React from "react";
 import { getSelectedDimensions } from "../../core/util";
 import FloatingRect from "./FloatingRect";
+import FillHandle from "./FillHandle";
 import useSelector from "../../hooks/use-selector";
 
 const Selected: React.FC = () => {
@@ -16,16 +17,23 @@ const Selected: React.FC = () => {
       )
   );
   const dragging = useSelector((state) => state.dragging);
-  const hidden = useSelector(
-    (state) => state.selected.size(state.model.data) < 2
-  );
+  const filling = useSelector((state) => state.filling);
+  const selectedSize = useSelector((state) => state.selected.size(state.model.data));
+  const hidden = selectedSize < 2;
+  
+  // 只要有选中的单元格就显示填充手柄（即使只有1个）
+  const showFillHandle = selectedSize > 0 && !dragging;
+  
   return (
-    <FloatingRect
-      variant="selected"
-      dimensions={dimensions}
-      dragging={dragging}
-      hidden={hidden}
-    />
+    <>
+      <FloatingRect
+        variant="selected"
+        dimensions={dimensions}
+        dragging={dragging}
+        hidden={hidden}
+      />
+      {showFillHandle && <FillHandle dimensions={dimensions} />}
+    </>
   );
 };
 

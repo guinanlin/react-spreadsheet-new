@@ -379,3 +379,104 @@ export const BasicSheet: StoryObj = {
     columnIndicatorWidth: "80px"
   }
 };
+
+export const FormulaDemo: StoryObj = {
+  args: {
+    data: [
+      [10, 5, 100, 100, "=SUM(A1:D1)"],
+      [20, 3, 25, 4, null],
+      ["=A1+A2", "=B1*B2", "=C1-C2", "=D1/D2", null],
+      ["=SUM(A1:A2)", null, null, null, null],
+      [null, null, null, null, null],
+      [null, null, null, null, null]
+    ],
+    rowIndicatorWidth: "100px",
+    columnIndicatorWidth: "80px",
+    columnLabels: ["数值A", "数值B", "数值C", "数值D", "横向求和"],
+    rowLabels: ["第一行", "第二行", "公式行", "SUM求和", "空行5", "空行6"]
+  }
+};
+
+/**
+ * 自动填充功能示例
+ * 
+ * 这个示例展示了 Excel 风格的自动填充功能：
+ * 
+ * 1. **简单复制**：选中单元格，将鼠标悬停在选中区域的右下角，会出现一个小方块（填充手柄）
+ * 2. **拖动填充**：点击并拖动填充手柄到其他单元格，释放后会复制内容
+ * 3. **智能填充**：按住 Ctrl/Cmd 键拖动，会自动识别模式并递增
+ *    - 数字序列：1, 2, 3...
+ *    - 文本+数字：项目1, 项目2, 项目3...
+ *    - 日期：自动按天递增
+ * 4. **多方向**：支持向上、下、左、右四个方向拖动
+ */
+export const FillHandleExample: StoryObj<Props<StringCell>> = {
+  render: function FillHandleStory() {
+    const [data, setData] = React.useState<Matrix.Matrix<StringCell>>([
+      [
+        { value: "1" },
+        { value: "项目1" },
+        { value: "2024-01-01" },
+        { value: "Apple" },
+      ],
+      [
+        { value: "2" },
+        { value: "项目2" },
+        { value: "2024-01-02" },
+        { value: "Banana" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+    ]);
+
+    return (
+      <div>
+        <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "#f5f5f5", borderRadius: "5px" }}>
+          <h3 style={{ marginTop: 0 }}>如何使用填充功能：</h3>
+          <ol>
+            <li>选中一个或多个单元格</li>
+            <li>将鼠标移动到选中区域的<strong>右下角</strong>，会看到一个小方块</li>
+            <li>鼠标悬停时会变成十字光标</li>
+            <li>点击并拖动到目标单元格</li>
+            <li>释放鼠标完成填充</li>
+            <li><strong>提示</strong>：按住 Ctrl/Cmd 键拖动可启用智能填充（数字递增、日期递增等）</li>
+          </ol>
+          <p><strong>示例数据说明：</strong></p>
+          <ul>
+            <li>第一列：数字序列（1, 2, ...）</li>
+            <li>第二列：文本+数字（项目1, 项目2, ...）</li>
+            <li>第三列：日期序列（2024-01-01, 2024-01-02, ...）</li>
+            <li>第四列：纯文本（会直接复制）</li>
+          </ul>
+        </div>
+        <Spreadsheet
+          data={data}
+          onChange={setData}
+          columnLabels={["数字", "项目名", "日期", "水果"]}
+        />
+      </div>
+    );
+  },
+};

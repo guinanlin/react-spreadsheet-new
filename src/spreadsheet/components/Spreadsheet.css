@@ -183,3 +183,28 @@
 .Spreadsheet__floating-rect--copied {
   border: 2px var(--outline-color) dashed;
 }
+
+/* Fill Handle Styles */
+.Spreadsheet__fill-handle-trigger {
+  z-index: 100;
+}
+
+.Spreadsheet__fill-handle {
+  background: var(--outline-color);
+  border: 1px solid white;
+  box-sizing: border-box;
+  cursor: crosshair;
+  z-index: 101;
+}
+
+.Spreadsheet__fill-handle:hover {
+  cursor: crosshair;
+}
+
+/* Fill Preview Styles */
+.Spreadsheet__floating-rect--fill-preview {
+  background: var(--outline-background-color);
+  border: 2px var(--outline-color) solid;
+  border-style: dashed;
+  opacity: 0.7;
+}

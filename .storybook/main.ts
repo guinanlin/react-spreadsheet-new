@@ -1,4 +1,7 @@
-import type { StorybookConfig } from "@storybook/react-webpack5";
+import type { StorybookConfig } from "@storybook/react-vite";
+import { mergeConfig } from 'vite';
+import path from 'path';
+
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
 
@@ -6,12 +9,11 @@ const config: StorybookConfig = {
     "@storybook/addon-links",
     "@storybook/addon-essentials",
     "@storybook/addon-interactions",
-    "@storybook/addon-webpack5-compiler-swc",
     "@chromatic-com/storybook",
   ],
 
   framework: {
-    name: "@storybook/react-webpack5",
+    name: "@storybook/react-vite",
     options: {},
   },
 
@@ -20,5 +22,22 @@ const config: StorybookConfig = {
   typescript: {
     reactDocgen: "react-docgen-typescript",
   },
+
+  async viteFinal(config) {
+    return mergeConfig(config, {
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, '../src'),
+          '@dty-lucky-sheet/core': path.resolve(__dirname, '../src/dty-lucky-sheet/packages/core/src'),
+          '@dty-lucky-sheet/react': path.resolve(__dirname, '../src/dty-lucky-sheet/packages/react/src'),
+          '@dty-lucky-sheet/formula': path.resolve(__dirname, '../src/dty-lucky-sheet/packages/formula/src'),
+        },
+      },
+      optimizeDeps: {
+        include: ['immer', 'lodash'],
+      },
+    });
+  },
 };
+
 export default config;

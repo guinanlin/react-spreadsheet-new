@@ -31,6 +31,9 @@ export const DRAG_START = "DRAG_START";
 export const DRAG_END = "DRAG_END";
 export const COMMIT = "COMMIT";
 export const SET_COLUMN_WIDTH = "SET_COLUMN_WIDTH";
+export const START_FILL = "START_FILL";
+export const FILL_DRAG = "FILL_DRAG";
+export const END_FILL = "END_FILL";
 
 export type BaseAction<T extends string> = {
   type: T;
@@ -294,6 +297,40 @@ export function setColumnWidth(
   };
 }
 
+export type StartFillAction = BaseAction<typeof START_FILL>;
+
+export function startFill(): StartFillAction {
+  return {
+    type: START_FILL,
+  };
+}
+
+export type FillDragAction = BaseAction<typeof FILL_DRAG> & {
+  payload: {
+    point: Point;
+  };
+};
+
+export function fillDrag(point: Point): FillDragAction {
+  return {
+    type: FILL_DRAG,
+    payload: { point },
+  };
+}
+
+export type EndFillAction = BaseAction<typeof END_FILL> & {
+  payload: {
+    useSmartFill: boolean;
+  };
+};
+
+export function endFill(useSmartFill: boolean = false): EndFillAction {
+  return {
+    type: END_FILL,
+    payload: { useSmartFill },
+  };
+}
+
 export type Action =
   | SetDataAction
   | SetCreateFormulaParserAction
@@ -317,4 +354,7 @@ export type Action =
   | ViewAction
   | ClearAction
   | BlurAction
-  | SetColumnWidthAction;
+  | SetColumnWidthAction
+  | StartFillAction
+  | FillDragAction
+  | EndFillAction;

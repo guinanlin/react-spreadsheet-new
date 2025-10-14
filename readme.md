@@ -128,6 +128,19 @@ npx @goodhawk/react-spreadsheet-cli add pivot-table
 - 🎯 高级过滤和聚合功能
 - ⚡ 结果缓存优化性能
 
+### DtyInput 组件 (Enhanced Input Component)
+- 🎨 基于 shadcn/ui 构建，现代化设计
+- 💡 智能下拉建议功能
+- 🌐 支持服务器端数据获取
+- ⚡ 内置防抖搜索
+- ⌨️ 完整的键盘导航支持
+- 🎯 多种建议项类型（普通、加粗、多行、操作）
+- 🔧 高度可定制（宽度、位置、样式）
+- 📱 响应式设计
+- 🐛 调试模式支持
+
+更多信息请参考 [src/dtyinput/README.md](src/dtyinput/README.md)
+
 ## 资源链接 (Resources)
 
 ### [在线演示 (Demo)](https://iddan.github.io/react-spreadsheet)

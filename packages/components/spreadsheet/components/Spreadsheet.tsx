@@ -36,6 +36,7 @@ import DefaultDataEditor from "./cells/DataEditor";
 import ActiveCell from "./cells/ActiveCell";
 import Selected from "./overlays/Selected";
 import Copied from "./overlays/Copied";
+import FillPreview from "./overlays/FillPreview";
 
 import "./Spreadsheet.css";
 
@@ -585,6 +586,7 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
         {activeCellNode}
         <Selected />
         <Copied />
+        <FillPreview />
       </div>
     ),
     [

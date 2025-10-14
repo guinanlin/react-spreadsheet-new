@@ -28,18 +28,33 @@ async function pathExists(path) {
   }
 }
 
+// 辅助函数：递归删除目录（带重试机制）
+async function removeDir(dir) {
+  if (!(await pathExists(dir))) {
+    return;
+  }
+
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      await fs.rm(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      return;
+    } catch (err) {
+      retries--;
+      if (retries === 0) {
+        throw err;
+      }
+      // 等待一下再重试（Windows 文件锁定问题）
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+}
+
 // 辅助函数：清空目录
 async function emptyDir(dir) {
-  if (await pathExists(dir)) {
-    const files = await fs.readdir(dir);
-    await Promise.all(
-      files.map(file => 
-        fs.rm(path.join(dir, file), { recursive: true, force: true })
-      )
-    );
-  } else {
-    await ensureDir(dir);
-  }
+  // 完全删除目录后重新创建，这样更可靠
+  await removeDir(dir);
+  await ensureDir(dir);
 }
 
 // 辅助函数：复制文件

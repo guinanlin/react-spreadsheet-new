@@ -1,18 +1,14 @@
 import type { Preview } from "@storybook/react";
-import "./index.css";
-
-// function to get user dark mode
-const getDarkMode = () => {
-  if (typeof window !== "undefined") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  }
-  return false;
-};
+import "../src/styles/globals.css";
 
 const preview: Preview = {
   parameters: {
     backgrounds: {
-      default: getDarkMode() ? "dark" : "light",
+      default: 'light',
+      values: [
+        { name: 'light', value: '#ffffff' },
+        { name: 'dark', value: '#000000' },
+      ],
     },
     controls: {
       matchers: {
@@ -21,6 +17,12 @@ const preview: Preview = {
       },
     },
   },
+  decorators: [
+    (Story) => {
+      document.documentElement.classList.add('light');
+      return Story();
+    },
+  ],
 };
 
 export default preview;
