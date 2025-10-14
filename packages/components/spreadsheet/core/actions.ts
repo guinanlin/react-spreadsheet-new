@@ -34,6 +34,8 @@ export const SET_COLUMN_WIDTH = "SET_COLUMN_WIDTH";
 export const START_FILL = "START_FILL";
 export const FILL_DRAG = "FILL_DRAG";
 export const END_FILL = "END_FILL";
+export const UNDO = "UNDO";
+export const REDO = "REDO";
 
 export type BaseAction<T extends string> = {
   type: T;
@@ -331,6 +333,18 @@ export function endFill(useSmartFill: boolean = false): EndFillAction {
   };
 }
 
+export type UndoAction = BaseAction<typeof UNDO>;
+
+export function undo(): UndoAction {
+  return { type: UNDO };
+}
+
+export type RedoAction = BaseAction<typeof REDO>;
+
+export function redo(): RedoAction {
+  return { type: REDO };
+}
+
 export type Action =
   | SetDataAction
   | SetCreateFormulaParserAction
@@ -357,4 +371,6 @@ export type Action =
   | SetColumnWidthAction
   | StartFillAction
   | FillDragAction
-  | EndFillAction;
+  | EndFillAction
+  | UndoAction
+  | RedoAction;

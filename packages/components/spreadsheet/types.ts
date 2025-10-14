@@ -45,6 +45,13 @@ export type Dimensions = {
   left: number;
 };
 
+/** History entry for undo/redo */
+export type HistoryEntry<Cell extends CellBase = CellBase> = {
+  data: Matrix<Cell>;
+  selected: Selection;
+  active: Point | null;
+};
+
 export type StoreState<Cell extends CellBase = CellBase> = {
   model: Model<Cell>;
   selected: Selection;
@@ -64,6 +71,9 @@ export type StoreState<Cell extends CellBase = CellBase> = {
   filling: boolean;
   fillRange: PointRange | null;
   fillSourceRange: PointRange | null;
+  // Undo/Redo history
+  past: HistoryEntry<Cell>[];
+  future: HistoryEntry<Cell>[];
 };
 
 export type CellChange<Cell extends CellBase = CellBase> = {

@@ -41,6 +41,18 @@ npx @react-spreadsheet/cli add formula-engine
 **依赖:** fast-formula-parser
 
 
+### dty-lucky-sheet
+
+Full-featured spreadsheet component based on FortuneSheet with rich editing capabilities
+
+```bash
+npx @react-spreadsheet/cli add dty-lucky-sheet
+```
+
+**文件数量:** 175  
+**依赖:** immer, lodash, classnames
+
+
 ## 开发说明
 
 ⚠️ **不要直接修改这个目录的文件！**

@@ -31,7 +31,33 @@ export const INITIAL_STATE: Types.StoreState = {
   filling: false,
   fillRange: null,
   fillSourceRange: null,
+  past: [],
+  future: [],
 };
+
+/** 保存当前状态到历史记录 */
+function saveHistory(state: Types.StoreState): Types.StoreState {
+  const MAX_HISTORY = 50; // 最多保存50条历史记录
+  
+  const historyEntry: Types.HistoryEntry = {
+    data: state.model.data,
+    selected: state.selected,
+    active: state.active,
+  };
+  
+  const newPast = [...state.past, historyEntry];
+  
+  // 限制历史记录数量
+  if (newPast.length > MAX_HISTORY) {
+    newPast.shift();
+  }
+  
+  return {
+    ...state,
+    past: newPast,
+    future: [], // 新操作会清空重做栈
+  };
+}
 
 export default function reducer(
   state: Types.StoreState,
@@ -132,8 +158,12 @@ export default function reducer(
       if (isActiveReadOnly(state)) {
         return state;
       }
+      
+      // 保存历史记录
+      const stateWithHistory = saveHistory(state);
+      
       return {
-        ...state,
+        ...stateWithHistory,
         model: updateCellValue(state.model, active, cellData),
         lastChanged: active,
       };
@@ -182,6 +212,9 @@ export default function reducer(
         return state;
       }
 
+      // 保存历史记录
+      const stateWithHistory = saveHistory(state);
+
       const copied = Matrix.split(text, (value) => ({ value }));
       const copiedSize = Matrix.getSize(copied);
 
@@ -203,7 +236,7 @@ export default function reducer(
         }
 
         return {
-          ...state,
+          ...stateWithHistory,
           model: new Model(createFormulaParser, newData),
           copied: null,
           cut: false,
@@ -267,7 +300,7 @@ export default function reducer(
       }
 
       return {
-        ...state,
+        ...stateWithHistory,
         model: new Model(createFormulaParser, acc.data),
         selected: new RangeSelection(
           new PointRange(active, {
@@ -439,14 +472,67 @@ export default function reducer(
 
       console.log("END_FILL: applying", commitChanges.length, "changes");
 
+      // 保存历史记录
+      const stateWithHistory = saveHistory(state);
+
       return {
-        ...state,
+        ...stateWithHistory,
         model: new Model(state.model.createFormulaParser, newData),
         filling: false,
         fillRange: null,
         fillSourceRange: null,
         lastCommit: commitChanges,
         lastChanged: state.fillRange.end,
+      };
+    }
+
+    case Actions.UNDO: {
+      if (state.past.length === 0) {
+        return state;
+      }
+
+      const previous = state.past[state.past.length - 1];
+      const newPast = state.past.slice(0, state.past.length - 1);
+
+      const currentEntry: Types.HistoryEntry = {
+        data: state.model.data,
+        selected: state.selected,
+        active: state.active,
+      };
+
+      return {
+        ...state,
+        model: new Model(state.model.createFormulaParser, previous.data),
+        selected: previous.selected,
+        active: previous.active,
+        past: newPast,
+        future: [currentEntry, ...state.future],
+        mode: "view",
+      };
+    }
+
+    case Actions.REDO: {
+      if (state.future.length === 0) {
+        return state;
+      }
+
+      const next = state.future[0];
+      const newFuture = state.future.slice(1);
+
+      const currentEntry: Types.HistoryEntry = {
+        data: state.model.data,
+        selected: state.selected,
+        active: state.active,
+      };
+
+      return {
+        ...state,
+        model: new Model(state.model.createFormulaParser, next.data),
+        selected: next.selected,
+        active: next.active,
+        past: [...state.past, currentEntry],
+        future: newFuture,
+        mode: "view",
       };
     }
 
@@ -503,8 +589,11 @@ function clear(state: Types.StoreState): Types.StoreState {
     newData = Matrix.set(point, clearedCell, newData);
   }
 
+  // 保存历史记录
+  const stateWithHistory = saveHistory(state);
+
   return {
-    ...state,
+    ...stateWithHistory,
     model: new Model(createFormulaParser, newData),
     ...commit(changes),
   };
@@ -628,8 +717,98 @@ const shiftKeyDownHandlers: KeyDownHandlers = {
   Tab: go(0, -1),
 };
 
-const shiftMetaKeyDownHandlers: KeyDownHandlers = {};
-const metaKeyDownHandlers: KeyDownHandlers = {};
+const shiftMetaKeyDownHandlers: KeyDownHandlers = {
+  // Ctrl+Shift+Z = Redo (Windows/Linux)
+  z: (state) => {
+    if (state.future.length === 0) {
+      return state;
+    }
+
+    const next = state.future[0];
+    const newFuture = state.future.slice(1);
+
+    const currentEntry: Types.HistoryEntry = {
+      data: state.model.data,
+      selected: state.selected,
+      active: state.active,
+    };
+
+    return {
+      ...state,
+      model: new Model(state.model.createFormulaParser, next.data),
+      selected: next.selected,
+      active: next.active,
+      past: [...state.past, currentEntry],
+      future: newFuture,
+      mode: "view",
+    };
+  },
+  Z: (state) => {
+    // 同时支持大写 Z
+    return shiftMetaKeyDownHandlers.z(state);
+  },
+};
+
+const metaKeyDownHandlers: KeyDownHandlers = {
+  // Ctrl+Z = Undo
+  z: (state) => {
+    if (state.past.length === 0) {
+      return state;
+    }
+
+    const previous = state.past[state.past.length - 1];
+    const newPast = state.past.slice(0, state.past.length - 1);
+
+    const currentEntry: Types.HistoryEntry = {
+      data: state.model.data,
+      selected: state.selected,
+      active: state.active,
+    };
+
+    return {
+      ...state,
+      model: new Model(state.model.createFormulaParser, previous.data),
+      selected: previous.selected,
+      active: previous.active,
+      past: newPast,
+      future: [currentEntry, ...state.future],
+      mode: "view",
+    };
+  },
+  Z: (state) => {
+    // 同时支持大写 Z
+    return metaKeyDownHandlers.z(state);
+  },
+  // Ctrl+Y = Redo (Windows/Linux)
+  y: (state) => {
+    if (state.future.length === 0) {
+      return state;
+    }
+
+    const next = state.future[0];
+    const newFuture = state.future.slice(1);
+
+    const currentEntry: Types.HistoryEntry = {
+      data: state.model.data,
+      selected: state.selected,
+      active: state.active,
+    };
+
+    return {
+      ...state,
+      model: new Model(state.model.createFormulaParser, next.data),
+      selected: next.selected,
+      active: next.active,
+      past: [...state.past, currentEntry],
+      future: newFuture,
+      mode: "view",
+    };
+  },
+  Y: (state) => {
+    // 同时支持大写 Y
+    return metaKeyDownHandlers.y(state);
+  },
+};
 
 export function getKeyDownHandler(
   state: Types.StoreState,
