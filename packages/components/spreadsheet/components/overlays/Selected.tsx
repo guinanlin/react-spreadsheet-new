@@ -32,7 +32,7 @@ const Selected: React.FC = () => {
         dragging={dragging}
         hidden={hidden}
       />
-      {showFillHandle && <FillHandle dimensions={dimensions} />}
+      {showFillHandle && <FillHandle dimensions={dimensions || null} />}
     </>
   );
 };
