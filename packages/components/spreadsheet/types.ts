@@ -63,6 +63,7 @@ export type StoreState<Cell extends CellBase = CellBase> = {
   lastCommit: null | CellChange<Cell>[];
   filling: boolean;
   fillRange: PointRange | null;
+  fillSourceRange: PointRange | null;
 };
 
 export type CellChange<Cell extends CellBase = CellBase> = {

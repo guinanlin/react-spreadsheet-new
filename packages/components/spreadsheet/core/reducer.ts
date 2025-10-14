@@ -30,6 +30,7 @@ export const INITIAL_STATE: Types.StoreState = {
   lastCommit: null,
   filling: false,
   fillRange: null,
+  fillSourceRange: null,
 };
 
 export default function reducer(
@@ -352,24 +353,26 @@ export default function reducer(
 
     case Actions.START_FILL: {
       // console.log("START_FILL");
+      const selectedRange = state.selected.toRange(state.model.data);
       return {
         ...state,
         filling: true,
         fillRange: null,
+        fillSourceRange: selectedRange,
       };
     }
 
     case Actions.FILL_DRAG: {
       const { point } = action.payload;
-      const selectedRange = state.selected.toRange(state.model.data);
       
-      if (!selectedRange || !state.filling) {
-        // console.log("FILL_DRAG: no selected range or not filling");
+      if (!state.filling || !state.fillSourceRange) {
         return state;
       }
 
-      // 创建填充范围：从选中区域的边界到拖动点
-      // 确保填充范围包含选中区域和拖动到的区域
+      // 使用缓存的原始选区，而不是 state.selected
+      const selectedRange = state.fillSourceRange;
+
+      // 创建填充范围：从原始选区到拖动点
       const fillRange = new PointRange(
         {
           row: Math.min(selectedRange.start.row, point.row),
@@ -396,24 +399,18 @@ export default function reducer(
       
       console.log("END_FILL: useSmartFill", useSmartFill, "state.filling", state.filling, "state.fillRange", state.fillRange);
       
-      if (!state.filling || !state.fillRange) {
+      if (!state.filling || !state.fillRange || !state.fillSourceRange) {
         console.log("END_FILL: not filling or no fillRange, returning");
         return {
           ...state,
           filling: false,
           fillRange: null,
+          fillSourceRange: null,
         };
       }
 
-      const selectedRange = state.selected.toRange(state.model.data);
-      if (!selectedRange) {
-        console.log("END_FILL: no selectedRange, returning");
-        return {
-          ...state,
-          filling: false,
-          fillRange: null,
-        };
-      }
+      // 使用缓存的原始选区作为源范围
+      const selectedRange = state.fillSourceRange;
 
       console.log("END_FILL: selectedRange.start", selectedRange.start, "selectedRange.end", selectedRange.end);
       console.log("END_FILL: fillRange.start", state.fillRange.start, "fillRange.end", state.fillRange.end);
@@ -447,6 +444,7 @@ export default function reducer(
         model: new Model(state.model.createFormulaParser, newData),
         filling: false,
         fillRange: null,
+        fillSourceRange: null,
         lastCommit: commitChanges,
         lastChanged: state.fillRange.end,
       };
