@@ -8,9 +8,11 @@ import * as Matrix from "../../data-structures/matrix";
 export type FillHandleProps = {
   /** Dimensions of the selected area */
   dimensions: Dimensions | null;
+  /** Whether the user is currently dragging to select */
+  dragging: boolean;
 };
 
-const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
+const FillHandle: React.FC<FillHandleProps> = ({ dimensions, dragging }) => {
   const dispatch = useDispatch();
   const [isDragging, setIsDragging] = React.useState(false);
   const [isHovering, setIsHovering] = React.useState(false);
@@ -18,12 +20,7 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
   const selected = useSelector((state) => state.selected);
   const data = useSelector((state) => state.model.data);
 
-  // 如果没有选中区域或选中区域为空，不显示
-  const selectedRange = selected.toRange(data);
-  if (!dimensions || !selectedRange || selected.size(data) === 0) {
-    return null;
-  }
-
+  // 所有的 hooks 必须在 early return 之前调用
   const handleMouseDown = React.useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
@@ -104,6 +101,14 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
       setIsHovering(false);
     };
   }, []);
+
+  // 如果没有选中区域或选中区域为空，或正在拖动选择，不显示
+  const selectedRange = selected.toRange(data);
+  const shouldShow = dimensions && selectedRange && selected.size(data) > 0 && !dragging;
+  
+  if (!shouldShow) {
+    return null;
+  }
 
   // 只在悬停时显示
   if (!isHovering && !filling) {
