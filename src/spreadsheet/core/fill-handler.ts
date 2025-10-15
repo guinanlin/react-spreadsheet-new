@@ -128,20 +128,26 @@ export function smartFill<Cell extends CellBase>(
   sourceRange: PointRange,
   targetRange: PointRange
 ): Map<string, Cell> {
+  console.log("smartFill: START");
   const changes = new Map<string, Cell>();
 
   // 确定填充方向
   const direction = detectFillDirection(sourceRange, targetRange);
+  console.log("smartFill: direction", direction);
   
   // 根据方向获取源序列
   const sourceSequence = getSourceSequence(sourceData, sourceRange, direction);
+  console.log("smartFill: sourceSequence length", sourceSequence.length);
+  console.log("smartFill: sourceSequence values", sourceSequence.map(c => c.value));
   
   if (sourceSequence.length === 0) {
+    console.log("smartFill: empty sequence, falling back to simpleCopy");
     return simpleCopy(sourceData, sourceRange, targetRange);
   }
 
   // 检测序列的模式
   const pattern = detectSequencePattern(sourceSequence);
+  console.log("smartFill: detected pattern", pattern);
   
   // 生成填充数据
   for (const point of targetRange) {
@@ -160,10 +166,12 @@ export function smartFill<Cell extends CellBase>(
     );
 
     if (cell) {
+      console.log("smartFill: generated cell at", point, "value", cell.value);
       changes.set(`${point.row},${point.column}`, cell);
     }
   }
 
+  console.log("smartFill: total changes", changes.size);
   return changes;
 }
 

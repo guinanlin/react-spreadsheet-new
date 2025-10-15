@@ -74,7 +74,7 @@ export class PivotApiClient {
 
       return result;
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new PivotApiError('Request was cancelled');
       }
       throw error;
@@ -417,7 +417,7 @@ export class PivotApiClient {
   }
 
   /** Utility delay function */
-  private delay(ms: number): Promise<void> {
+  protected delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
@@ -485,9 +485,5 @@ export class MockPivotApiClient extends PivotApiClient {
       { id: 'sales-data', name: 'Sales Data', description: 'Monthly sales data', rowCount: 1000 },
       { id: 'customer-data', name: 'Customer Data', description: 'Customer information', rowCount: 500 },
     ];
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }

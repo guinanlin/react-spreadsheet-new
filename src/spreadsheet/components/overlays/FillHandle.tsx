@@ -8,9 +8,11 @@ import * as Matrix from "../../data-structures/matrix";
 export type FillHandleProps = {
   /** Dimensions of the selected area */
   dimensions: Dimensions | null;
+  /** Whether the user is currently dragging to select */
+  dragging: boolean;
 };
 
-const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
+const FillHandle: React.FC<FillHandleProps> = ({ dimensions, dragging }) => {
   const dispatch = useDispatch();
   const [isDragging, setIsDragging] = React.useState(false);
   const [isHovering, setIsHovering] = React.useState(false);
@@ -18,12 +20,7 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
   const selected = useSelector((state) => state.selected);
   const data = useSelector((state) => state.model.data);
 
-  // 如果没有选中区域或选中区域为空，不显示
-  const selectedRange = selected.toRange(data);
-  if (!dimensions || !selectedRange || selected.size(data) === 0) {
-    return null;
-  }
-
+  // 所有的 hooks 必须在 early return 之前调用
   const handleMouseDown = React.useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
@@ -72,7 +69,7 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
         setIsHovering(false);
         // 检测是否按下 Ctrl 键来决定使用智能填充还是简单复制
         const useSmartFill = e.ctrlKey || e.metaKey;
-        // console.log("End fill, useSmartFill:", useSmartFill, "lastPoint:", lastPoint);
+        console.log("FillHandle: End fill, useSmartFill:", useSmartFill, "ctrlKey:", e.ctrlKey, "metaKey:", e.metaKey);
         dispatch(Actions.endFill(useSmartFill));
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
@@ -105,6 +102,14 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
     };
   }, []);
 
+  // 如果没有选中区域或选中区域为空，或正在拖动选择，不显示
+  const selectedRange = selected.toRange(data);
+  const shouldShow = dimensions && selectedRange && selected.size(data) > 0 && !dragging;
+  
+  if (!shouldShow) {
+    return null;
+  }
+
   // 只在悬停时显示
   if (!isHovering && !filling) {
     return (
@@ -112,13 +117,14 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
         className="Spreadsheet__fill-handle-trigger"
         style={{
           position: "absolute",
-          left: dimensions.left + dimensions.width - 6,
-          top: dimensions.top + dimensions.height - 6,
-          width: 12,
-          height: 12,
+          left: dimensions.left + dimensions.width - 8,
+          top: dimensions.top + dimensions.height - 8,
+          width: 16,
+          height: 16,
           cursor: "crosshair",
           pointerEvents: "auto",
         }}
+        onMouseDown={handleMouseDown}
         onMouseEnter={handleMouseEnter}
       />
     );
@@ -131,13 +137,14 @@ const FillHandle: React.FC<FillHandleProps> = ({ dimensions }) => {
         className="Spreadsheet__fill-handle-trigger"
         style={{
           position: "absolute",
-          left: dimensions.left + dimensions.width - 6,
-          top: dimensions.top + dimensions.height - 6,
-          width: 12,
-          height: 12,
+          left: dimensions.left + dimensions.width - 8,
+          top: dimensions.top + dimensions.height - 8,
+          width: 16,
+          height: 16,
           cursor: "crosshair",
           pointerEvents: "auto",
         }}
+        onMouseDown={handleMouseDown}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       />

@@ -21,9 +21,6 @@ const Selected: React.FC = () => {
   const selectedSize = useSelector((state) => state.selected.size(state.model.data));
   const hidden = selectedSize < 2;
   
-  // 只要有选中的单元格就显示填充手柄（即使只有1个）
-  const showFillHandle = selectedSize > 0 && !dragging;
-  
   return (
     <>
       <FloatingRect
@@ -32,7 +29,7 @@ const Selected: React.FC = () => {
         dragging={dragging}
         hidden={hidden}
       />
-      {showFillHandle && <FillHandle dimensions={dimensions} />}
+      <FillHandle dimensions={dimensions || null} dragging={dragging} />
     </>
   );
 };

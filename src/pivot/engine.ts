@@ -83,7 +83,8 @@ export class PivotEngine {
       };
     } catch (error) {
       console.error('Error computing pivot table:', error);
-      throw new Error(`Pivot computation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Pivot computation failed: ${message}`);
     }
   }
 

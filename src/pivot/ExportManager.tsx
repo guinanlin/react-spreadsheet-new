@@ -1,8 +1,5 @@
 import * as React from 'react';
-import { PivotStructure, PivotCell, PivotHeader, ExportConfig, PivotConfiguration } from './types';
-
-/** Export format types */
-export type ExportFormat = 'csv' | 'excel' | 'pdf' | 'json';
+import { PivotStructure, PivotCell, PivotHeader, ExportConfig, PivotConfiguration, ExportFormat } from './types';
 
 /** Export options for different formats */
 export interface ExportOptions {
