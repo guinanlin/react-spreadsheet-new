@@ -49,7 +49,7 @@ Full-featured spreadsheet component based on FortuneSheet with rich editing capa
 npx @react-spreadsheet/cli add dty-lucky-sheet
 ```
 
-**文件数量:** 175  
+**文件数量:** 179  
 **依赖:** immer, lodash, classnames
 
 
