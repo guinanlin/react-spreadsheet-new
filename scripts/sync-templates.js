@@ -384,6 +384,11 @@ const COMPONENTS = {
         'FormulaPluginRegistry.ts',
         'definePlugin.ts',
       ],
+      'typings': [
+        'ssf.d.ts',
+        'fast-formula-parser.d.ts',
+        'regenerator-runtime.d.ts',
+      ],
       'core/utils': [
         'index.ts',
         'patch.ts',

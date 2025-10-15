@@ -14,6 +14,7 @@
     "declaration": false,
     "strict": true,
     "typeRoots": [
+      "./src/dty-lucky-sheet/typings",
       "./src/typings",
       "./node_modules/@types"
     ],
