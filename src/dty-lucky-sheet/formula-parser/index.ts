@@ -9,11 +9,11 @@ import FormulaParser from "fast-formula-parser";
 export const formulaParser = new FormulaParser({
   onCell: (ref: any) => {
     // 单元格引用处理
-    return { value: 0, ref };
+    return 0;
   },
   onRange: (ref: any) => {
     // 范围引用处理
-    return { value: [[0]], ref };
+    return [[0]];
   },
 });
 

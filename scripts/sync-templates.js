@@ -378,6 +378,12 @@ const COMPONENTS = {
         'validation.ts',
         'zoom.ts',
       ],
+      'core/plugin': [
+        'index.ts',
+        'types.ts',
+        'FormulaPluginRegistry.ts',
+        'definePlugin.ts',
+      ],
       'core/utils': [
         'index.ts',
         'patch.ts',

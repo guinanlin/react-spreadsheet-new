@@ -21,7 +21,9 @@ import {
   calcSelectionInfo,
   groupValuesRefresh,
   setFormulaCellInfoMap,
+  api,
 } from "../../core";
+import { formulaPluginRegistry } from "../../core/plugin";
 import React, {
   useMemo,
   useState,
@@ -425,6 +427,48 @@ const Workbook = React.forwardRef<WorkbookInstance, Settings & AdditionalProps>(
       context.luckysheet_select_save,
       mergedSettings.hooks,
     ]);
+
+    // 自动注册插件（在数据初始化之前）
+    useEffect(() => {
+      const autoRegisterPlugins = async () => {
+        // 检查待注册插件队列
+        const pendingPlugins = (window as any).__PENDING_PLUGINS__ || [];
+        
+        if (pendingPlugins.length > 0 && context) {
+          console.log(`🔌 发现 ${pendingPlugins.length} 个插件，开始自动注册...`);
+          
+          try {
+            // 批量注册所有插件
+            await formulaPluginRegistry.registerPlugins(pendingPlugins);
+            
+            // 绑定到 Parser
+            formulaPluginRegistry.bindToParser(context);
+            
+            // 清空队列
+            (window as any).__PENDING_PLUGINS__ = [];
+            
+            console.log('✅ 插件自动注册完成');
+            
+            // 触发公式重新计算
+            setContextWithProduce((draftCtx) => {
+              // 使用 API 重新计算所有工作表的公式
+              draftCtx.luckysheetfile.forEach((sheet) => {
+                if (sheet.id) {
+                  api.calculateFormula(draftCtx, sheet.id);
+                }
+              });
+            });
+          } catch (error) {
+            console.error('❌ 插件自动注册失败:', error);
+          }
+        }
+      };
+      
+      // 延迟执行，确保所有插件都已加载，但要在数据初始化完成后立即执行
+      const timer = setTimeout(autoRegisterPlugins, 50);
+      
+      return () => clearTimeout(timer);
+    }, [context, setContextWithProduce]);
 
     const providerValue = useMemo(
       () => ({
