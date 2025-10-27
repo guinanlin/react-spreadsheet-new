@@ -81,7 +81,7 @@ function evaluateCell<Cell extends CellBase>(
     let visited = PointSet.from([point]);
     let nextEvaluatedData = Matrix.set(
       point,
-      { ...cell, value: FormulaError.REF },
+      { ...cell, value: "#REF!" },
       prevEvaluatedData
     );
     for (const referrer of referenceGraph.getBackwardsRecursive(point)) {
@@ -95,7 +95,7 @@ function evaluateCell<Cell extends CellBase>(
       }
       nextEvaluatedData = Matrix.set(
         referrer,
-        { ...referrerCell, value: FormulaError.REF },
+        { ...referrerCell, value: "#REF!" },
         nextEvaluatedData
       );
     }
@@ -195,6 +195,6 @@ export function getFormulaComputedValue(
   try {
     return Formula.evaluate(formula, point, formulaParser);
   } catch (e) {
-    return FormulaError.REF;
+    return "#REF!";
   }
 }

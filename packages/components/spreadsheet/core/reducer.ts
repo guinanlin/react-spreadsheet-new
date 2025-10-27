@@ -743,9 +743,9 @@ const shiftMetaKeyDownHandlers: KeyDownHandlers = {
       mode: "view",
     };
   },
-  Z: (state) => {
+  Z: (state, event) => {
     // 同时支持大写 Z
-    return shiftMetaKeyDownHandlers.z(state);
+    return shiftMetaKeyDownHandlers.z(state, event);
   },
 };
 
@@ -775,9 +775,9 @@ const metaKeyDownHandlers: KeyDownHandlers = {
       mode: "view",
     };
   },
-  Z: (state) => {
+  Z: (state, event) => {
     // 同时支持大写 Z
-    return metaKeyDownHandlers.z(state);
+    return metaKeyDownHandlers.z(state, event);
   },
   // Ctrl+Y = Redo (Windows/Linux)
   y: (state) => {
@@ -804,9 +804,9 @@ const metaKeyDownHandlers: KeyDownHandlers = {
       mode: "view",
     };
   },
-  Y: (state) => {
+  Y: (state, event) => {
     // 同时支持大写 Y
-    return metaKeyDownHandlers.y(state);
+    return metaKeyDownHandlers.y(state, event);
   },
 };
 
