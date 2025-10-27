@@ -3,12 +3,18 @@
   FormulaParserConfig,
   Value,
 } from "fast-formula-parser";
-import type { RangeRef } from "fast-formula-parser";
 import { PointRange } from "../data-structures/point-range";
 import { Point } from "../data-structures/point";
 import * as Matrix from "../data-structures/matrix";
 import { CellBase } from "../types";
 import { PointSet } from "./point-set";
+
+// Define RangeRef type locally if not exported by the library
+type RangeRef = {
+  from: CellRef;
+  to: CellRef;
+  sheet: string;
+};
 
 export const FORMULA_VALUE_PREFIX = "=";
 
@@ -148,8 +154,14 @@ export function evaluate(
   formulaParser: FormulaParser
 ): Value {
   try {
+    // Note: Different versions/builds of fast-formula-parser may have different type definitions
+    // The runtime API accepts (formula, position, allowReturnArray) but some type definitions
+    // may not reflect this. We use type assertion to handle this compatibility issue.
     const position = convertPointToCellRef(point);
-    const returned = formulaParser.parse(formula, position);
+    const returned = (formulaParser.parse as (formula: string, position?: CellRef, allowReturnArray?: boolean) => any)(
+      formula,
+      position
+    );
     
     // Check if returned is a FormulaError object (has toString method and looks like an error)
     if (returned && typeof returned === 'object' && 'toString' in returned) {
