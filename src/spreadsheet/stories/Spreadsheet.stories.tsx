@@ -1,4 +1,5 @@
 ﻿import * as React from "react";
+import '@/styles/globals.css';
 import type { StoryFn, Meta, StoryObj } from "@storybook/react";
 import {
   createEmptyMatrix,
@@ -966,10 +967,23 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
 
   return (
     <div>
-      <div style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}>
-        <button onClick={handleSelectEntireRow}>Select entire row</button>
-        <button onClick={handleSelectEntireColumn}>Select entire column</button>
-        <button onClick={handleSelectEntireWorksheet}>
+      <div className="mb-2 flex gap-2">
+        <button
+          className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
+          onClick={handleSelectEntireRow}
+        >
+          Select entire row
+        </button>
+        <button
+          className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
+          onClick={handleSelectEntireColumn}
+        >
+          Select entire column
+        </button>
+        <button
+          className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
+          onClick={handleSelectEntireWorksheet}
+        >
           Select entire worksheet
         </button>
       </div>
@@ -1022,7 +1036,12 @@ export const ControlledActivation: StoryFn<Props<StringCell>> = (props) => {
             }))
           }
         />
-        <button onClick={handleActivate}>Activate</button>
+        <button
+          className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
+          onClick={handleActivate}
+        >
+          Activate
+        </button>
       </div>
       <Spreadsheet ref={spreadsheetRef} {...props} />
     </div>
