@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportToCSV, exportToJSON, exportToXLSX } from '../core/export';
+import { exportData } from '../core/export-capability';
 import type { StoryFn, Meta, StoryObj } from "@storybook/react";
 import {
   createEmptyMatrix,
@@ -956,6 +957,8 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
   );
   const [evaluated, setEvaluated] = React.useState<Matrix.Matrix<StringCell>>();
   const [exportFormat, setExportFormat] = React.useState<'csv' | 'json' | 'xlsx'>('csv');
+  const [remoteUrl, setRemoteUrl] = React.useState<string>('/api/orders/export-data');
+  const [remoteFormat, setRemoteFormat] = React.useState<'csv'|'json'|'xlsx'>('xlsx');
   const handleSelect = React.useCallback((selection: Selection) => {
     setSelected(selection);
   }, []);
@@ -1059,6 +1062,38 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
           onClick={() => { handleExport('selection'); }}
         >
           导出选区
+        </Button>
+      </div>
+      {/* 远端导出工具栏 */}
+      <div className="mb-2 flex items-center gap-2">
+        <Input
+          value={remoteUrl}
+          onChange={(e) => setRemoteUrl(e.target.value)}
+          placeholder="远端数据 URL（需返回二维数组 JSON）"
+          className="max-w-md"
+        />
+        <Select value={remoteFormat} onValueChange={(v) => setRemoteFormat(v as 'csv'|'json'|'xlsx')}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="选择格式" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="csv">CSV</SelectItem>
+            <SelectItem value="json">JSON</SelectItem>
+            <SelectItem value="xlsx">XLSX</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={async () => {
+            await exportData(
+              { getData: async () => (await fetch(remoteUrl)).json() },
+              { format: remoteFormat }
+            );
+          }}
+        >
+          导出远端数据
         </Button>
       </div>
       <div className="mb-2 flex gap-2">

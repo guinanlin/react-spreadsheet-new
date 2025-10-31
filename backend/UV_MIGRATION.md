@@ -40,6 +40,7 @@ uv add --dev pytest
 
 # 运行 Python 脚本
 uv run pivot_api.py
+uv run order_api.py
 
 # 运行 Python 命令
 uv run python -c "print('Hello')"

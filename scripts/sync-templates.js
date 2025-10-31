@@ -95,7 +95,7 @@ const COMPONENTS = {
       'components/overlays': ['Copied.tsx', 'FloatingRect.tsx', 'Selected.tsx', 'FillHandle.tsx', 'FillPreview.tsx', 'index.ts'],
       'components/indicators': ['ColumnIndicator.tsx', 'RowIndicator.tsx', 'CornerIndicator.tsx', 'index.ts'],
       'components/tabs': ['SheetTabs.tsx', 'SheetTabs.css'],
-      'core': ['actions.ts', 'areModelsEqual.ts', 'context.ts', 'reducer.ts', 'util.ts', 'fill-handler.ts', 'export.ts'],
+      'core': ['actions.ts', 'areModelsEqual.ts', 'context.ts', 'reducer.ts', 'util.ts', 'fill-handler.ts', 'export.ts', 'export-capability.ts'],
       'data-structures': ['matrix.ts', 'point.ts', 'point-range.ts', 'selection.ts', 'index.ts'],
       'engine': ['engine.ts', 'formula.ts', 'point-graph.ts', 'point-hash.ts', 'point-set.ts', 'index.ts'],
       'hooks': ['use-dispatch.ts', 'use-selector.ts', 'index.ts'],
