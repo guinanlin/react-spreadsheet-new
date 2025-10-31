@@ -41,6 +41,7 @@
         "core/util.ts",
         "core/fill-handler.ts",
         "core/export.ts",
+        "core/export-capability.ts",
         "data-structures/matrix.ts",
         "data-structures/point.ts",
         "data-structures/point-range.ts",
