@@ -1,5 +1,9 @@
 ﻿import * as React from "react";
 import '@/styles/globals.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { exportToCSV, exportToJSON } from '../core/export';
 import type { StoryFn, Meta, StoryObj } from "@storybook/react";
 import {
   createEmptyMatrix,
@@ -704,11 +708,11 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
 
   return (
     <RowActionsContext.Provider value={rowActions}>
-      <div style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}>
-        <button onClick={addColumn}>添加列</button>
-        <button onClick={addRow}>添加行</button>
-        <button onClick={removeColumn}>删除列</button>
-        <button onClick={removeRow}>删除行</button>
+      <div className="mb-2 flex gap-2">
+        <Button variant="outline" size="sm" onClick={addColumn}>添加列</Button>
+        <Button variant="outline" size="sm" onClick={addRow}>添加行</Button>
+        <Button variant="destructive" size="sm" onClick={removeColumn}>删除列</Button>
+        <Button variant="destructive" size="sm" onClick={removeRow}>删除行</Button>
       </div>
       <Spreadsheet 
         {...props} 
@@ -927,12 +931,13 @@ export const Filter: StoryFn<Props<StringCell>> = (props) => {
 
   return (
     <>
-      <div>
-        <input
+      <div className="mb-2">
+        <Input
           type="text"
           placeholder="Filter"
           value={filter}
           onChange={handleFilterChange}
+          className="max-w-xs"
         />
       </div>
       <Spreadsheet {...props} data={filtered} onChange={setData} />
@@ -949,6 +954,8 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
   const [selected, setSelected] = React.useState<Selection>(
     new EmptySelection()
   );
+  const [evaluated, setEvaluated] = React.useState<Matrix.Matrix<StringCell>>();
+  const [exportFormat, setExportFormat] = React.useState<'csv' | 'json'>('csv');
   const handleSelect = React.useCallback((selection: Selection) => {
     setSelected(selection);
   }, []);
@@ -965,8 +972,67 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
     setSelected(new EntireWorksheetSelection());
   }, []);
 
+  // 订单示例数据（不包含列头；列头使用 columnLabels 展示）
+  const orderData = React.useMemo<Matrix.Matrix<StringCell>>(() => (
+    [
+      [ { value: 'SO-1001' }, { value: '张三' }, { value: '产品A' }, { value: '2' }, { value: '199' }, { value: '398' }, { value: '上海' }, { value: '2024-10-01' }, { value: '已发货' } ],
+      [ { value: 'SO-1002' }, { value: '李四' }, { value: '产品B' }, { value: '1' }, { value: '299' }, { value: '299' }, { value: '北京' }, { value: '2024-10-02' }, { value: '处理中' } ],
+      [ { value: 'SO-1003' }, { value: '王五' }, { value: '产品C' }, { value: '5' }, { value: '99' },  { value: '495' }, { value: '深圳' }, { value: '2024-10-03' }, { value: '已完成' } ],
+      [ { value: 'SO-1004' }, { value: '赵六' }, { value: '产品A' }, { value: '3' }, { value: '199' }, { value: '597' }, { value: '杭州' }, { value: '2024-10-04' }, { value: '待支付' } ],
+      [ { value: 'SO-1005' }, { value: '钱七' }, { value: '产品D' }, { value: '10'}, { value: '49' },  { value: '490' }, { value: '成都' }, { value: '2024-10-05' }, { value: '已取消' } ],
+      [ { value: 'SO-1006' }, { value: '孙八' }, { value: '产品B' }, { value: '4' }, { value: '299' }, { value: '1196'}, { value: '苏州' }, { value: '2024-10-06' }, { value: '已发货' } ],
+      [ { value: 'SO-1007' }, { value: '周九' }, { value: '产品E' }, { value: '2' }, { value: '159' }, { value: '318' }, { value: '武汉' }, { value: '2024-10-07' }, { value: '已完成' } ],
+      [ { value: 'SO-1008' }, { value: '吴十' }, { value: '产品C' }, { value: '6' }, { value: '99' },  { value: '594' }, { value: '西安' }, { value: '2024-10-08' }, { value: '处理中' } ],
+    ]
+  ), []);
+
+  const orderColumnLabels = React.useMemo<string[]>(() => (
+    [ '订单号', '客户', '产品', '数量', '单价', '金额', '城市', '日期', '状态' ]
+  ), []);
+
+  const hasSelection = React.useMemo(() => {
+    try {
+      const data = orderData || [];
+      return Boolean(selected && selected.toRange(data));
+    } catch {
+      return false;
+    }
+  }, [selected, orderData]);
+
+  const handleExport = React.useCallback((scope: 'all' | 'selection') => {
+    const build = {
+      data: orderData,
+      evaluatedData: evaluated,
+      selection: scope === 'selection' ? selected : undefined,
+      useEvaluated: true,
+      includeColumnLabels: true,
+      includeRowLabels: false,
+      columnLabels: orderColumnLabels,
+      rowLabels: props.rowLabels,
+    } as const;
+
+    if (exportFormat === 'csv') {
+      exportToCSV(build, { filename: scope === 'selection' ? 'selection.csv' : 'spreadsheet.csv', delimiter: ',', bom: true });
+    } else {
+      exportToJSON(build, { filename: scope === 'selection' ? 'selection.json' : 'spreadsheet.json' });
+    }
+  }, [orderData, orderColumnLabels, props.rowLabels, evaluated, selected, exportFormat]);
+
   return (
     <div>
+      <div className="mb-2 flex items-center gap-2">
+        <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as 'csv' | 'json')}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="选择格式" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="csv">CSV</SelectItem>
+            <SelectItem value="json">JSON</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => handleExport('all')}>导出整表</Button>
+        <Button variant="outline" size="sm" disabled={!hasSelection} onClick={() => handleExport('selection')}>导出选区</Button>
+      </div>
       <div className="mb-2 flex gap-2">
         <button
           className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
@@ -987,7 +1053,14 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
           Select entire worksheet
         </button>
       </div>
-      <Spreadsheet {...props} selected={selected} onSelect={handleSelect} />
+      <Spreadsheet
+        {...props}
+        data={orderData}
+        columnLabels={orderColumnLabels}
+        selected={selected}
+        onSelect={handleSelect}
+        onEvaluatedDataChange={setEvaluated}
+      />
     </div>
   );
 };
