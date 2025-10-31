@@ -2325,9 +2325,9 @@ export function calcSelectionInfo(ctx: Context, lang?: string | null) {
   }
   const formatString =
     lang && !["zh", "zh_tw"].includes(lang) ? "0.00" : "w0.00";
-  const average: string = SSF.format(formatString, sum / numberC);
-  sum = SSF.format(formatString, sum);
-  max = SSF.format(formatString, max);
-  min = SSF.format(formatString, min);
+  const average: string = (SSF as any).format(formatString, sum / numberC);
+  sum = (SSF as any).format(formatString, sum);
+  max = (SSF as any).format(formatString, max);
+  min = (SSF as any).format(formatString, min);
   return { numberC, count, sum, max, min, average };
 }

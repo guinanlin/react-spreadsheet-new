@@ -223,7 +223,7 @@ export function setCellFormat(
       "'fa' and 't' should be present in value when attr is 'ct'"
     );
   } else if (attr === "ct" && !_.isNil(cellData.v)) {
-    cellData.m = SSF.format(value.fa, cellData.v); // auto generate mask
+    cellData.m = (SSF as any).format(value.fa, cellData.v); // auto generate mask
   }
 
   // @ts-ignore

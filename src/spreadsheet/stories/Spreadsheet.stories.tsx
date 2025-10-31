@@ -13,6 +13,8 @@ import {
   type Point,
   type SpreadsheetRef,
 } from "..";
+import DefaultColumnIndicator from "../components/indicators/ColumnIndicator";
+import * as Types from "../types";
 import * as Matrix from "../data-structures/matrix";
 import { AsyncCellDataEditor, AsyncCellDataViewer } from "./AsyncCellData";
 import CustomCell from "./CustomCell";
@@ -186,6 +188,121 @@ const RowActionsContext = React.createContext<{
   onDeleteRow: (row: number) => void;
 } | null>(null);
 
+// 单价列的自定义单元格组件
+const PriceCellEditor: React.FC<{
+  row: number;
+  column: number;
+  cell: StringCell | undefined;
+  onChange: (cell: StringCell) => void;
+  exitEditMode: () => void;
+}> = ({ cell, onChange, exitEditMode }) => {
+  const [inputValue, setInputValue] = React.useState(cell?.value || '');
+
+  const handleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // 允许输入数字、小数点和最多两位小数，但不阻止输入过程
+    // 在输入过程中允许超过两位小数，但在提交时进行验证
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setInputValue(value);
+    }
+  }, []);
+
+  const handleSubmit = React.useCallback(() => {
+    console.log('🔵 handleSubmit 被调用, inputValue:', inputValue, 'cell:', cell);
+    
+    // 验证并格式化输入值
+    let finalValue = inputValue.trim();
+    
+    if (finalValue === '') {
+      console.log('🟡 提交空值');
+      // 保留原始 cell 的所有属性（如 DataViewer, DataEditor），只更新 value
+      onChange({ ...cell, value: '' });
+      exitEditMode();
+      return;
+    }
+
+    // 验证是否为有效数字
+    const numValue = parseFloat(finalValue);
+    if (isNaN(numValue) || numValue < 0) {
+      console.log('🔴 验证失败');
+      alert('请输入有效的价格（非负数）');
+      return;
+    }
+
+    // 限制最多两位小数
+    if (finalValue.includes('.')) {
+      const parts = finalValue.split('.');
+      if (parts[1] && parts[1].length > 2) {
+        finalValue = numValue.toFixed(2);
+      }
+    }
+
+    // 保存格式化后的值
+    console.log('🟢 提交值:', finalValue);
+    // 保留原始 cell 的所有属性（如 DataViewer, DataEditor），只更新 value
+    onChange({ ...cell, value: finalValue });
+    exitEditMode();
+  }, [inputValue, cell, onChange, exitEditMode]);
+
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    } else if (e.key === 'Escape') {
+      exitEditMode();
+    }
+  }, [handleSubmit, exitEditMode]);
+
+  const handleBlur = React.useCallback(() => {
+    handleSubmit();
+  }, [handleSubmit]);
+
+  return (
+    <input
+      type="text"
+      value={inputValue}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+      autoFocus
+      style={{
+        width: '100%',
+        height: '100%',
+        border: 'none',
+        outline: 'none',
+        fontSize: '14px',
+        textAlign: 'left',
+        padding: '0 8px',
+      }}
+      placeholder="请输入价格"
+    />
+  );
+};
+
+const PriceCellViewer: React.FC<{
+  row: number;
+  column: number;
+  cell: StringCell | undefined;
+  setCellData: (cell: StringCell) => void;
+  evaluatedCell: StringCell | undefined;
+}> = ({ cell, setCellData }) => {
+  const value = cell?.value || '';
+  
+  return (
+    <div style={{ 
+      padding: '0 8px', 
+      fontSize: '14px',
+      color: value ? '#333' : '#999',
+      display: 'flex',
+      alignItems: 'center',
+      height: '100%'
+    }}>
+      {value || '单价'}
+    </div>
+  );
+};
+
 // 操作列的自定义单元格组件
 const ActionCellViewer: React.FC<{
   row: number;
@@ -266,14 +383,116 @@ const ActionCellViewer: React.FC<{
   );
 };
 
+// 自定义操作列头组件
+const ActionColumnHeader: React.FC<{
+  column: number;
+  label?: React.ReactNode | null;
+  selected: boolean;
+  onSelect: (column: number, extend: boolean) => void;
+  onAddColumn: () => void;
+  onDeleteColumn: () => void;
+}> = ({ column, label, selected, onSelect, onAddColumn, onDeleteColumn }) => {
+  const handleAddColumn = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('添加列，当前列:', column);
+    onAddColumn();
+  }, [column, onAddColumn]);
+
+  const handleDeleteColumn = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('删除列，当前列:', column);
+    onDeleteColumn();
+  }, [column, onDeleteColumn]);
+
+  const handleColumnClick = React.useCallback((e: React.MouseEvent) => {
+    // 如果点击的是按钮，不触发列选择
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    onSelect(column, e.shiftKey);
+  }, [column, onSelect]);
+
+  return (
+    <th
+      className={`Spreadsheet__header Spreadsheet__header--column ${
+        selected ? 'Spreadsheet__header--selected' : ''
+      }`}
+      onClick={handleColumnClick}
+      style={{
+        position: 'relative',
+        minWidth: '120px',
+      }}
+    >
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        width: '100%',
+        padding: '0 4px'
+      }}>
+        <span style={{ flex: 1, textAlign: 'left' }}>
+          {label !== undefined ? label : '操作'}
+        </span>
+        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+          <button
+            onClick={handleAddColumn}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              border: '1px solid #52c41a',
+              background: '#f6ffed',
+              cursor: 'pointer',
+              fontSize: '12px',
+              padding: '2px 4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#52c41a',
+              borderRadius: '2px',
+              minWidth: '20px',
+              height: '18px',
+            }}
+            title="添加列"
+          >
+            ➕
+          </button>
+          <button
+            onClick={handleDeleteColumn}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              border: '1px solid #ff4d4f',
+              background: '#fff2f0',
+              cursor: 'pointer',
+              fontSize: '12px',
+              padding: '2px 4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ff4d4f',
+              borderRadius: '2px',
+              minWidth: '20px',
+              height: '18px',
+            }}
+            title="删除列"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+    </th>
+  );
+};
+
 /**
  * 受控模式示例
  * 
  * 展示如何在受控模式下管理表格数据，包含动态增删行列、自定义操作列等高级功能。
  * 操作列使用自定义 DataViewer 实现了行级的增加和删除功能。
+ * 操作列头包含添加列和删除列的图标按钮。
  */
 export const Controlled: StoryFn<Props<StringCell>> = (props) => {
-  // 初始化数据，包含操作列
+  // 初始化数据，包含单价列和操作列
   const initialData = React.useMemo(() => {
     const data: Matrix.Matrix<StringCell> = [];
     for (let i = 0; i < INITIAL_ROWS; i++) {
@@ -282,6 +501,12 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
       for (let j = 0; j < INITIAL_COLUMNS; j++) {
         row.push({ value: undefined });
       }
+      // 倒数第二列是单价列，使用自定义组件
+      row.push({
+        value: undefined,
+        DataViewer: PriceCellViewer,
+        DataEditor: PriceCellEditor,
+      });
       // 最后一列是操作列，使用自定义 DataViewer
       row.push({
         value: '操作',
@@ -295,6 +520,56 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
 
   const [data, setData] = React.useState(initialData);
 
+  // 处理添加列（在操作列之前插入）
+  const handleAddColumn = React.useCallback(() => {
+    setData((currentData) => {
+      return currentData.map((row) => {
+        const newRow = [...row];
+        // 在操作列之前插入新列（倒数第二列）
+        newRow.splice(newRow.length - 1, 0, { value: undefined });
+        return newRow;
+      });
+    });
+  }, []);
+
+  // 处理删除列（删除操作列之前的列）
+  const handleDeleteColumn = React.useCallback(() => {
+    setData((currentData) => {
+      // 确保至少保留单价列和操作列
+      if (currentData[0]?.length <= 2) {
+        alert('至少需要保留单价列和操作列');
+        return currentData;
+      }
+      
+      return currentData.map((row) => {
+        const newRow = [...row];
+        // 删除倒数第二列（保留操作列）
+        newRow.splice(newRow.length - 2, 1);
+        return newRow;
+      });
+    });
+  }, []);
+
+  // 自定义 ColumnIndicator 组件
+  const CustomColumnIndicator: Types.ColumnIndicatorComponent = React.useCallback((indicatorProps: Types.ColumnIndicatorProps) => {
+    const { column } = indicatorProps;
+    const columnCount = data[0]?.length || 0;
+    
+    // 如果是操作列（最后一列），使用自定义组件
+    if (column === columnCount - 1) {
+      return (
+        <ActionColumnHeader
+          {...indicatorProps}
+          onAddColumn={handleAddColumn}
+          onDeleteColumn={handleDeleteColumn}
+        />
+      );
+    }
+    
+    // 其他列使用默认的 ColumnIndicator
+    return <DefaultColumnIndicator {...indicatorProps} />;
+  }, [data, handleAddColumn, handleDeleteColumn]);
+
   // 处理添加行
   const handleAddRow = React.useCallback((row: number) => {
     console.log('执行添加行，行号:', row);
@@ -302,10 +577,17 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
       const { columns } = Matrix.getSize(currentData);
       const newRow: StringCell[] = [];
       
-      // 创建新行，前面是普通列，最后是操作列
-      for (let i = 0; i < columns - 1; i++) {
+      // 创建新行，前面是普通列，然后是单价列，最后是操作列
+      for (let i = 0; i < columns - 2; i++) {
         newRow.push({ value: undefined });
       }
+      // 添加单价列
+      newRow.push({
+        value: undefined,
+        DataViewer: PriceCellViewer,
+        DataEditor: PriceCellEditor,
+      });
+      // 添加操作列
       newRow.push({
         value: '操作',
         readOnly: true,
@@ -348,8 +630,8 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
       setData((data) =>
         data.map((row) => {
           const nextRow = [...row];
-          // 在操作列之前插入新列
-          nextRow.splice(nextRow.length - 1, 0, { value: undefined });
+          // 在单价列之前插入新列（倒数第二列）
+          nextRow.splice(nextRow.length - 2, 0, { value: undefined });
           return nextRow;
         })
       ),
@@ -359,11 +641,11 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
   const removeColumn = React.useCallback(() => {
     setData((data) =>
       data.map((row) => {
-        // 确保至少保留操作列
-        if (row.length <= 1) return row;
+        // 确保至少保留单价列和操作列
+        if (row.length <= 2) return row;
         const newRow = [...row];
-        // 删除倒数第二列（保留操作列）
-        newRow.splice(newRow.length - 2, 1);
+        // 删除倒数第三列（保留单价列和操作列）
+        newRow.splice(newRow.length - 3, 1);
         return newRow;
       })
     );
@@ -375,10 +657,17 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
         const { columns } = Matrix.getSize(data);
         const newRow: StringCell[] = [];
         
-        // 创建新行
-        for (let i = 0; i < columns - 1; i++) {
+        // 创建新行，前面是普通列，然后是单价列，最后是操作列
+        for (let i = 0; i < columns - 2; i++) {
           newRow.push({ value: undefined });
         }
+        // 添加单价列
+        newRow.push({
+          value: undefined,
+          DataViewer: PriceCellViewer,
+          DataEditor: PriceCellEditor,
+        });
+        // 添加操作列
         newRow.push({
           value: '操作',
           readOnly: true,
@@ -400,13 +689,14 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
     });
   }, [setData]);
 
-  // 生成列标签，最后一列显示"操作"
+  // 生成列标签，倒数第二列显示"单价"，最后一列显示"操作"
   const columnLabels = React.useMemo(() => {
     const labels: string[] = [];
     const columnCount = data[0]?.length || 0;
-    for (let i = 0; i < columnCount - 1; i++) {
+    for (let i = 0; i < columnCount - 2; i++) {
       labels.push(String.fromCharCode(65 + i)); // A, B, C, ...
     }
+    labels.push('单价');
     labels.push('操作');
     return labels;
   }, [data]);
@@ -424,6 +714,7 @@ export const Controlled: StoryFn<Props<StringCell>> = (props) => {
         data={data} 
         onChange={setData}
         columnLabels={columnLabels}
+        ColumnIndicator={CustomColumnIndicator}
       />
     </RowActionsContext.Provider>
   );
@@ -675,14 +966,14 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
 
   return (
     <div>
-      <div>
+      <div style={{ marginBottom: '10px', display: 'flex', gap: '8px' }}>
         <button onClick={handleSelectEntireRow}>Select entire row</button>
         <button onClick={handleSelectEntireColumn}>Select entire column</button>
         <button onClick={handleSelectEntireWorksheet}>
           Select entire worksheet
         </button>
       </div>
-      <Spreadsheet {...props} selected={selected} onSelect={handleSelect} />;
+      <Spreadsheet {...props} selected={selected} onSelect={handleSelect} />
     </div>
   );
 };
@@ -733,7 +1024,7 @@ export const ControlledActivation: StoryFn<Props<StringCell>> = (props) => {
         />
         <button onClick={handleActivate}>Activate</button>
       </div>
-      <Spreadsheet ref={spreadsheetRef} {...props} />;
+      <Spreadsheet ref={spreadsheetRef} {...props} />
     </div>
   );
 };
@@ -800,7 +1091,8 @@ export const FormulaDemo: StoryObj = {
  */
 export const FillHandleExample: StoryObj<Props<StringCell>> = {
   render: function FillHandleStory() {
-    const [data, setData] = React.useState<Matrix.Matrix<StringCell>>([
+    // 第一个表格的数据
+    const [data1, setData1] = React.useState<Matrix.Matrix<StringCell>>([
       [
         { value: "1" },
         { value: "项目1" },
@@ -839,9 +1131,50 @@ export const FillHandleExample: StoryObj<Props<StringCell>> = {
       ],
     ]);
 
+    // 第二个表格的数据
+    const [data2, setData2] = React.useState<Matrix.Matrix<StringCell>>([
+      [
+        { value: "A" },
+        { value: "产品A" },
+        { value: "100" },
+        { value: "红色" },
+      ],
+      [
+        { value: "B" },
+        { value: "产品B" },
+        { value: "200" },
+        { value: "蓝色" },
+      ],
+      [
+        { value: "C" },
+        { value: "产品C" },
+        { value: "300" },
+        { value: "绿色" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+      [
+        { value: "" },
+        { value: "" },
+        { value: "" },
+        { value: "" },
+      ],
+    ]);
+
     return (
-      <div>
-        <div style={{ marginBottom: "20px", padding: "15px", backgroundColor: "#f5f5f5", borderRadius: "5px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        {/* 说明文档 */}
+        <div style={{ padding: "15px", backgroundColor: "#f5f5f5", borderRadius: "5px" }}>
           <h3 style={{ marginTop: 0 }}>如何使用填充功能：</h3>
           <ol>
             <li>选中一个或多个单元格</li>
@@ -851,19 +1184,268 @@ export const FillHandleExample: StoryObj<Props<StringCell>> = {
             <li>释放鼠标完成填充</li>
             <li><strong>提示</strong>：按住 Ctrl/Cmd 键拖动可启用智能填充（数字递增、日期递增等）</li>
           </ol>
-          <p><strong>示例数据说明：</strong></p>
-          <ul>
-            <li>第一列：数字序列（1, 2, ...）</li>
-            <li>第二列：文本+数字（项目1, 项目2, ...）</li>
-            <li>第三列：日期序列（2024-01-01, 2024-01-02, ...）</li>
-            <li>第四列：纯文本（会直接复制）</li>
+        </div>
+
+        {/* 第一个表格 - 上面 */}
+        <div>
+          <h4 style={{ marginBottom: "10px", color: "#333" }}>表格一：基础填充示例</h4>
+          <div style={{ marginBottom: "10px", padding: "10px", backgroundColor: "#e8f4fd", borderRadius: "5px", fontSize: "14px" }}>
+            <strong>示例数据说明：</strong>
+            <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
+              <li>第一列：数字序列（1, 2, ...）</li>
+              <li>第二列：文本+数字（项目1, 项目2, ...）</li>
+              <li>第三列：日期序列（2024-01-01, 2024-01-02, ...）</li>
+              <li>第四列：纯文本（会直接复制）</li>
+            </ul>
+          </div>
+          <Spreadsheet
+            data={data1}
+            onChange={setData1}
+            columnLabels={["数字", "项目名", "日期", "水果"]}
+          />
+        </div>
+
+        {/* 第二个表格 - 下面 */}
+        <div>
+          <h4 style={{ marginBottom: "10px", color: "#333" }}>表格二：产品数据示例</h4>
+          <div style={{ marginBottom: "10px", padding: "10px", backgroundColor: "#f0f8e8", borderRadius: "5px", fontSize: "14px" }}>
+            <strong>示例数据说明：</strong>
+            <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
+              <li>第一列：字母序列（A, B, C, ...）</li>
+              <li>第二列：产品名称（产品A, 产品B, ...）</li>
+              <li>第三列：价格数字（100, 200, 300, ...）</li>
+              <li>第四列：颜色（红色, 蓝色, 绿色, ...）</li>
+            </ul>
+          </div>
+          <Spreadsheet
+            data={data2}
+            onChange={setData2}
+            columnLabels={["编号", "产品名", "价格", "颜色"]}
+          />
+        </div>
+      </div>
+    );
+  },
+};
+
+/**
+ * 横向和纵向滚动示例
+ * 
+ * 展示如何在限定宽度和高度的容器中使用表格，同时支持横向和纵向滚动来查看所有数据。
+ * 当列的总宽度超过容器宽度时，会出现横向滚动条；当行数超过容器高度时，会出现纵向滚动条。
+ */
+export const HorizontalScroll: StoryObj<Props<StringCell>> = {
+  parameters: {
+    docs: {
+      description: {
+        story: '横向和纵向滚动示例，表格容器限定为 400px 宽度和 300px 高度，包含多列多行数据，展示双向滚动条的使用。适用于需要在有限空间内展示大量数据的场景。',
+      },
+    },
+  },
+  render: function HorizontalScrollStory() {
+    // 创建包含10列12行的数据
+    const [data, setData] = React.useState<Matrix.Matrix<StringCell>>([
+      [
+        { value: "产品A" },
+        { value: "100" },
+        { value: "50" },
+        { value: "上海" },
+        { value: "2024-01-01" },
+        { value: "已发货" },
+        { value: "张三" },
+        { value: "备注信息" },
+        { value: "优先级高" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品B" },
+        { value: "200" },
+        { value: "30" },
+        { value: "北京" },
+        { value: "2024-01-02" },
+        { value: "处理中" },
+        { value: "李四" },
+        { value: "需要跟进" },
+        { value: "优先级中" },
+        { value: "待确认" },
+      ],
+      [
+        { value: "产品C" },
+        { value: "150" },
+        { value: "80" },
+        { value: "深圳" },
+        { value: "2024-01-03" },
+        { value: "已完成" },
+        { value: "王五" },
+        { value: "无备注" },
+        { value: "优先级低" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品D" },
+        { value: "300" },
+        { value: "20" },
+        { value: "广州" },
+        { value: "2024-01-04" },
+        { value: "待处理" },
+        { value: "赵六" },
+        { value: "紧急订单" },
+        { value: "优先级高" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品E" },
+        { value: "250" },
+        { value: "45" },
+        { value: "杭州" },
+        { value: "2024-01-05" },
+        { value: "已发货" },
+        { value: "钱七" },
+        { value: "加急处理" },
+        { value: "优先级高" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品F" },
+        { value: "180" },
+        { value: "60" },
+        { value: "成都" },
+        { value: "2024-01-06" },
+        { value: "处理中" },
+        { value: "孙八" },
+        { value: "需要审核" },
+        { value: "优先级中" },
+        { value: "待确认" },
+      ],
+      [
+        { value: "产品G" },
+        { value: "220" },
+        { value: "35" },
+        { value: "武汉" },
+        { value: "2024-01-07" },
+        { value: "已完成" },
+        { value: "周九" },
+        { value: "正常订单" },
+        { value: "优先级低" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品H" },
+        { value: "320" },
+        { value: "15" },
+        { value: "西安" },
+        { value: "2024-01-08" },
+        { value: "待处理" },
+        { value: "吴十" },
+        { value: "VIP客户" },
+        { value: "优先级高" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品I" },
+        { value: "190" },
+        { value: "55" },
+        { value: "南京" },
+        { value: "2024-01-09" },
+        { value: "已发货" },
+        { value: "郑十一" },
+        { value: "普通订单" },
+        { value: "优先级中" },
+        { value: "待确认" },
+      ],
+      [
+        { value: "产品J" },
+        { value: "280" },
+        { value: "25" },
+        { value: "重庆" },
+        { value: "2024-01-10" },
+        { value: "处理中" },
+        { value: "王十二" },
+        { value: "需要沟通" },
+        { value: "优先级中" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品K" },
+        { value: "210" },
+        { value: "40" },
+        { value: "天津" },
+        { value: "2024-01-11" },
+        { value: "已完成" },
+        { value: "李十三" },
+        { value: "已完结" },
+        { value: "优先级低" },
+        { value: "已确认" },
+      ],
+      [
+        { value: "产品L" },
+        { value: "350" },
+        { value: "10" },
+        { value: "苏州" },
+        { value: "2024-01-12" },
+        { value: "待处理" },
+        { value: "张十四" },
+        { value: "重要客户" },
+        { value: "优先级高" },
+        { value: "待确认" },
+      ],
+    ]);
+
+    const columnLabels = [
+      "产品名称",
+      "单价",
+      "数量",
+      "城市",
+      "日期",
+      "状态",
+      "负责人",
+      "备注",
+      "优先级",
+      "确认状态",
+    ];
+
+    return (
+      <div>
+        {/* 说明文档 */}
+        <div style={{ padding: "15px", backgroundColor: "#fff3e0", borderRadius: "5px", marginBottom: "20px" }}>
+          <h3 style={{ marginTop: 0 }}>双向滚动功能说明：</h3>
+          <ul style={{ margin: "5px 0", paddingLeft: "20px" }}>
+            <li>容器宽度限定为 <strong>400px</strong>，高度限定为 <strong>300px</strong></li>
+            <li>表格包含 <strong>10 列</strong>数据，总宽度超过容器宽度</li>
+            <li>表格包含 <strong>12 行</strong>数据，总高度超过容器高度</li>
+            <li>同时出现<strong>横向和纵向滚动条</strong>，可以查看所有数据</li>
+            <li>适用于需要在有限空间内展示大量数据的场景</li>
           </ul>
         </div>
-        <Spreadsheet
-          data={data}
-          onChange={setData}
-          columnLabels={["数字", "项目名", "日期", "水果"]}
-        />
+
+        {/* 限定宽度和高度的容器 */}
+        <div
+          style={{
+            width: "400px",
+            height: "300px",
+            border: "2px solid #1890ff",
+            borderRadius: "8px",
+            padding: "10px",
+            backgroundColor: "#f0f7ff",
+            overflow: "auto",
+          }}
+        >
+          <div style={{ 
+            marginBottom: "10px", 
+            color: "#1890ff", 
+            fontWeight: "bold",
+            fontSize: "14px" 
+          }}>
+            📊 限定尺寸容器（400px × 300px）- 支持双向滚动
+          </div>
+          <Spreadsheet
+            data={data}
+            onChange={setData}
+            columnLabels={columnLabels}
+            rowIndicatorWidth="40px"
+            columnIndicatorWidth="100px"
+          />
+        </div>
       </div>
     );
   },

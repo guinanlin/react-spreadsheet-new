@@ -201,7 +201,7 @@ export const WithoutToolbar: Story = {
   args: {
     showToolbar: false,
     colorOptions: [...DEFAULT_COLOR_OPTIONS],
-    showIndexColumn: true,
+    showIndexColumn: false,
   },
 };
 

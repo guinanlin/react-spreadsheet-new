@@ -88,6 +88,7 @@ const Workbook = React.forwardRef<WorkbookInstance, Settings & AdditionalProps>(
     const scrollbarY = useRef<HTMLDivElement>(null);
     const cellArea = useRef<HTMLDivElement>(null);
     const workbookContainer = useRef<HTMLDivElement>(null);
+    const pluginsRegisteredRef = useRef(false);
 
     const refs: RefValues = useMemo(
       () => ({
@@ -430,11 +431,17 @@ const Workbook = React.forwardRef<WorkbookInstance, Settings & AdditionalProps>(
 
     // 自动注册插件（在数据初始化之前）
     useEffect(() => {
+      // 如果已注册，直接返回
+      if (pluginsRegisteredRef.current) return;
+      
       const autoRegisterPlugins = async () => {
         // 检查待注册插件队列
         const pendingPlugins = (window as any).__PENDING_PLUGINS__ || [];
         
         if (pendingPlugins.length > 0 && context) {
+          // 标记为已注册
+          pluginsRegisteredRef.current = true;
+          
           console.log(`🔌 发现 ${pendingPlugins.length} 个插件，开始自动注册...`);
           
           try {
@@ -468,7 +475,7 @@ const Workbook = React.forwardRef<WorkbookInstance, Settings & AdditionalProps>(
       const timer = setTimeout(autoRegisterPlugins, 50);
       
       return () => clearTimeout(timer);
-    }, [context, setContextWithProduce]);
+    }, []);
 
     const providerValue = useMemo(
       () => ({

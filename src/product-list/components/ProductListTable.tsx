@@ -85,7 +85,9 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
     console.log('handleDeleteProduct:', handleDeleteProduct);
     console.log('handleAddRow:', handleAddRow);
     
-    const matrix = productsToMatrix(currentProducts, colorOptions, handleDeleteProduct, showIndexColumn, handleAddRow);
+    // 将 readonly 数组转换为可变数组
+    const mutableColorOptions = Array.isArray(colorOptions) ? [...colorOptions] : [];
+    const matrix = productsToMatrix(currentProducts, mutableColorOptions, handleDeleteProduct, showIndexColumn, handleAddRow);
     
     // 为特定单元格设置自定义组件
     matrix.forEach((row, rowIndex) => {
@@ -96,13 +98,13 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
       
       // 设置颜色列的自定义组件
       if (row[colorColumn]) {
-        (row[colorColumn] as ColorCell).DataViewer = ColorSelectViewer;
-        (row[colorColumn] as ColorCell).DataEditor = ColorSelectEditor;
+        (row[colorColumn] as ColorCell).DataViewer = ColorSelectViewer as any;
+        (row[colorColumn] as ColorCell).DataEditor = ColorSelectEditor as any;
       }
       
       // 设置操作列的自定义组件
       if (row[actionColumn]) {
-        (row[actionColumn] as ActionCell).DataViewer = ActionCellViewer;
+        (row[actionColumn] as ActionCell).DataViewer = ActionCellViewer as any;
         console.log('设置操作列自定义组件:', row[actionColumn]);
       }
     });
@@ -112,11 +114,19 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
   }, [currentProducts, colorOptions, handleDeleteProduct, showIndexColumn, handleAddRow]);
 
   // 处理 Spreadsheet 数据变化
-  const handleSpreadsheetChange = useCallback((newData: CellBase[][]) => {
+  const handleSpreadsheetChange = useCallback((newData: (CellBase | undefined)[][]) => {
     // 排除合计行（最后一行）
     const dataRows = newData.slice(0, -1);
     
     const updatedProducts: ProductItem[] = [];
+    
+    // 根据是否显示序号列，确定各列的索引
+    const colorColumn = showIndexColumn ? 1 : 0;
+    const partColumn = showIndexColumn ? 2 : 1;
+    const unitColumn = showIndexColumn ? 3 : 2;
+    const quantityColumn = showIndexColumn ? 4 : 3;
+    const unitPriceColumn = showIndexColumn ? 5 : 4;
+    const noteColumn = showIndexColumn ? 7 : 6;
     
     dataRows.forEach((row, index) => {
       if (!row) return;
@@ -126,12 +136,12 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
       
       const product: ProductItem = {
         id: originalProduct?.id || generateId(),
-        color: String(row[1]?.value || ''),
-        part: String(row[2]?.value || ''),
-        unit: String(row[3]?.value || ''),
-        quantity: Number(row[4]?.value || 0),
-        unitPrice: Number(row[5]?.value || 0),
-        note: String(row[7]?.value || ''),
+        color: String(row[colorColumn]?.value || ''),
+        part: String(row[partColumn]?.value || ''),
+        unit: String(row[unitColumn]?.value || ''),
+        quantity: Number(row[quantityColumn]?.value || 0),
+        unitPrice: Number(row[unitPriceColumn]?.value || 0),
+        note: String(row[noteColumn]?.value || ''),
       };
       
       // 自动计算销售金额
@@ -141,7 +151,7 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
     });
     
     setCurrentProducts(updatedProducts);
-  }, [currentProducts, setCurrentProducts]);
+  }, [currentProducts, setCurrentProducts, showIndexColumn]);
 
 
   return (
@@ -163,7 +173,7 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
         <Spreadsheet
           data={spreadsheetData}
           onChange={handleSpreadsheetChange}
-          columnLabels={showIndexColumn ? COLUMN_LABELS : COLUMN_LABELS_NO_INDEX}
+          columnLabels={showIndexColumn ? [...COLUMN_LABELS] : [...COLUMN_LABELS_NO_INDEX]}
           rowIndicatorWidth="40px"
           columnIndicatorWidth="80px"
           darkMode={darkMode}
@@ -175,7 +185,7 @@ export const ProductListTable: React.FC<ProductListTableProps> = ({
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onAddProduct={handleAddProduct}
-        colorOptions={colorOptions}
+        colorOptions={Array.isArray(colorOptions) ? [...colorOptions] : undefined}
       />
     </div>
   );

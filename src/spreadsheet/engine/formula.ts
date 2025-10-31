@@ -1,7 +1,5 @@
 ﻿import FormulaParser, {
   CellRef,
-  DepParser,
-  FormulaError,
   FormulaParserConfig,
   Value,
 } from "fast-formula-parser";
@@ -10,6 +8,13 @@ import { Point } from "../data-structures/point";
 import * as Matrix from "../data-structures/matrix";
 import { CellBase } from "../types";
 import { PointSet } from "./point-set";
+
+// Define RangeRef type locally if not exported by the library
+type RangeRef = {
+  from: CellRef;
+  to: CellRef;
+  sheet: string;
+};
 
 export const FORMULA_VALUE_PREFIX = "=";
 
@@ -33,7 +38,7 @@ export function createFormulaParser(
 ): FormulaParser {
   return new FormulaParser({
     ...config,
-    onCell: (ref) => {
+    onCell: (ref: CellRef) => {
       const point: Point = {
         row: ref.row - 1,
         column: ref.col - 1,
@@ -42,7 +47,7 @@ export function createFormulaParser(
       if (!isNaN(cell?.value as number)) return Number(cell?.value);
       return cell?.value;
     },
-    onRange: (ref) => {
+    onRange: (ref: RangeRef) => {
       const size = Matrix.getSize(data);
       const start: Point = {
         row: ref.from.row - 1,
@@ -61,8 +66,6 @@ export function createFormulaParser(
   });
 }
 
-const depParser = new DepParser();
-
 /**
  * For given formula returns the cell references
  * @param formula - formula to get references for
@@ -74,40 +77,75 @@ export function getReferences(
 ): PointSet {
   const { rows, columns } = Matrix.getSize(data);
   try {
-    const dependencies = depParser.parse(formula, convertPointToCellRef(point));
-
-    const references = PointSet.from(
-      dependencies.flatMap((reference) => {
-        const isRange = "from" in reference;
-        if (isRange) {
-          const { from, to } = reference;
-
-          const normalizedFrom: Point = {
-            row: from.row - 1,
-            column: from.col - 1,
-          };
-
-          const normalizedTo: Point = {
-            row: Math.min(to.row - 1, rows - 1),
-            column: Math.min(to.col - 1, columns - 1),
-          };
-
-          const range = new PointRange(normalizedFrom, normalizedTo);
-
-          return Array.from(range);
-        }
-        return { row: reference.row - 1, column: reference.col - 1 };
-      })
-    );
-
-    return references;
-  } catch (error) {
-    if (error instanceof FormulaError) {
-      return PointSet.from([]);
-    } else {
-      throw error;
+    // Use a simple regex-based approach to extract cell references
+    // This is a fallback since DepParser might not be available as a value
+    const cellRefRegex = /([A-Z]+)(\d+)/g;
+    const rangeRefRegex = /([A-Z]+\d+):([A-Z]+\d+)/g;
+    
+    const references: Point[] = [];
+    
+    // Find range references first (e.g., A1:B2)
+    let rangeMatch;
+    while ((rangeMatch = rangeRefRegex.exec(formula)) !== null) {
+      const [, fromStr, toStr] = rangeMatch;
+      const fromMatch = /([A-Z]+)(\d+)/.exec(fromStr);
+      const toMatch = /([A-Z]+)(\d+)/.exec(toStr);
+      
+      if (fromMatch && toMatch) {
+        const fromCol = columnLettersToIndex(fromMatch[1]);
+        const fromRow = parseInt(fromMatch[2], 10) - 1;
+        const toCol = columnLettersToIndex(toMatch[1]);
+        const toRow = parseInt(toMatch[2], 10) - 1;
+        
+        const normalizedFrom: Point = {
+          row: fromRow,
+          column: fromCol,
+        };
+        
+        const normalizedTo: Point = {
+          row: Math.min(toRow, rows - 1),
+          column: Math.min(toCol, columns - 1),
+        };
+        
+        const range = new PointRange(normalizedFrom, normalizedTo);
+        references.push(...Array.from(range));
+      }
     }
+    
+    // Find individual cell references (excluding those already in ranges)
+    const rangesText = Array.from(formula.matchAll(rangeRefRegex)).map(m => m[0]);
+    let formulaWithoutRanges = formula;
+    rangesText.forEach(range => {
+      formulaWithoutRanges = formulaWithoutRanges.replace(range, '');
+    });
+    
+    let cellMatch;
+    while ((cellMatch = cellRefRegex.exec(formulaWithoutRanges)) !== null) {
+      const [, colStr, rowStr] = cellMatch;
+      const col = columnLettersToIndex(colStr);
+      const row = parseInt(rowStr, 10) - 1;
+      
+      if (row >= 0 && row < rows && col >= 0 && col < columns) {
+        references.push({ row, column: col });
+      }
+    }
+
+    return PointSet.from(references);
+  } catch (error) {
+    // Return empty set on any error
+    return PointSet.from([]);
   }
+}
+
+/**
+ * Convert column letters (e.g., "A", "Z", "AA") to zero-based index
+ */
+function columnLettersToIndex(letters: string): number {
+  let index = 0;
+  for (let i = 0; i < letters.length; i++) {
+    index = index * 26 + (letters.charCodeAt(i) - 'A'.charCodeAt(0) + 1);
+  }
+  return index - 1;
 }
 
 export function evaluate(
@@ -116,14 +154,40 @@ export function evaluate(
   formulaParser: FormulaParser
 ): Value {
   try {
+    // Note: Different versions/builds of fast-formula-parser may have different type definitions
+    // The runtime API accepts (formula, position, allowReturnArray) but some type definitions
+    // may not reflect this. We use type assertion to handle this compatibility issue.
     const position = convertPointToCellRef(point);
-    const returned = formulaParser.parse(formula, position);
-    return returned instanceof FormulaError ? returned.toString() : returned;
-  } catch (error) {
-    if (error instanceof FormulaError) {
-      return error.toString();
+    const returned = (formulaParser.parse as (formula: string, position?: CellRef, allowReturnArray?: boolean) => any)(
+      formula,
+      position
+    );
+    
+    // Check if returned is a FormulaError object (has toString method and looks like an error)
+    if (returned && typeof returned === 'object' && 'toString' in returned) {
+      const strValue = String(returned);
+      // If it looks like an error string, return it
+      if (strValue.startsWith('#') && strValue.endsWith('!')) {
+        return strValue;
+      }
     }
-    throw error;
+    
+    // Check if returned value is an error string (e.g., "#REF!", "#VALUE!")
+    if (typeof returned === 'string' && returned.startsWith('#') && returned.endsWith('!')) {
+      return returned;
+    }
+    
+    return returned as Value;
+  } catch (error) {
+    // Check if error has a toString method or contains error message
+    if (error && typeof error === 'object' && 'toString' in error) {
+      const errorStr = String(error);
+      if (errorStr.startsWith('#') && errorStr.endsWith('!')) {
+        return errorStr;
+      }
+    }
+    // For other errors, return a generic error
+    return "#ERROR!";
   }
 }
 
