@@ -3,7 +3,7 @@ import '@/styles/globals.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { exportToCSV, exportToJSON } from '../core/export';
+import { exportToCSV, exportToJSON, exportToXLSX } from '../core/export';
 import type { StoryFn, Meta, StoryObj } from "@storybook/react";
 import {
   createEmptyMatrix,
@@ -955,10 +955,12 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
     new EmptySelection()
   );
   const [evaluated, setEvaluated] = React.useState<Matrix.Matrix<StringCell>>();
-  const [exportFormat, setExportFormat] = React.useState<'csv' | 'json'>('csv');
+  const [exportFormat, setExportFormat] = React.useState<'csv' | 'json' | 'xlsx'>('csv');
   const handleSelect = React.useCallback((selection: Selection) => {
     setSelected(selection);
   }, []);
+
+  // 移除调试日志
 
   const handleSelectEntireRow = React.useCallback(() => {
     setSelected(new EntireRowsSelection(0, 0));
@@ -991,19 +993,27 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
   ), []);
 
   const hasSelection = React.useMemo(() => {
-    try {
-      const data = orderData || [];
-      return Boolean(selected && selected.toRange(data));
-    } catch {
-      return false;
-    }
-  }, [selected, orderData]);
+    // 认为只要不是 EmptySelection 就视为存在选区
+    return !(selected instanceof EmptySelection);
+  }, [selected]);
 
-  const handleExport = React.useCallback((scope: 'all' | 'selection') => {
+  const buildTimestampedFilename = React.useCallback((ext: 'csv' | 'json' | 'xlsx') => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return `export-${stamp}.${ext}`;
+  }, []);
+
+  const handleExport = React.useCallback(async (scope: 'all' | 'selection') => {
+    const baseForSelection = (evaluated && true) ? (evaluated as Matrix.Matrix<StringCell>) : orderData;
+    const normalizedSelection = scope === 'selection' && selected
+      ? selected.normalizeTo(baseForSelection)
+      : undefined;
+
     const build = {
       data: orderData,
       evaluatedData: evaluated,
-      selection: scope === 'selection' ? selected : undefined,
+      selection: normalizedSelection,
       useEvaluated: true,
       includeColumnLabels: true,
       includeRowLabels: false,
@@ -1012,11 +1022,13 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
     } as const;
 
     if (exportFormat === 'csv') {
-      exportToCSV(build, { filename: scope === 'selection' ? 'selection.csv' : 'spreadsheet.csv', delimiter: ',', bom: true });
+      exportToCSV(build, { filename: buildTimestampedFilename('csv'), delimiter: ',', bom: true });
+    } else if (exportFormat === 'json') {
+      exportToJSON(build, { filename: buildTimestampedFilename('json') });
     } else {
-      exportToJSON(build, { filename: scope === 'selection' ? 'selection.json' : 'spreadsheet.json' });
+      await exportToXLSX(build, { filename: buildTimestampedFilename('xlsx'), sheetName: 'Sheet1' });
     }
-  }, [orderData, orderColumnLabels, props.rowLabels, evaluated, selected, exportFormat]);
+  }, [orderData, orderColumnLabels, props.rowLabels, evaluated, selected, exportFormat, buildTimestampedFilename]);
 
   return (
     <div>
@@ -1028,10 +1040,26 @@ export const ControlledSelection: StoryFn<Props<StringCell>> = (props) => {
           <SelectContent>
             <SelectItem value="csv">CSV</SelectItem>
             <SelectItem value="json">JSON</SelectItem>
+            <SelectItem value="xlsx">XLSX</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" onClick={() => handleExport('all')}>导出整表</Button>
-        <Button variant="outline" size="sm" disabled={!hasSelection} onClick={() => handleExport('selection')}>导出选区</Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={() => { handleExport('all'); }}
+        >
+          导出整表
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!hasSelection}
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={() => { handleExport('selection'); }}
+        >
+          导出选区
+        </Button>
       </div>
       <div className="mb-2 flex gap-2">
         <button

@@ -26,13 +26,20 @@ export interface JsonOptions {
   filename?: string; // 默认 "spreadsheet.json"
 }
 
+export interface XlsxOptions {
+  filename?: string; // 默认 "spreadsheet.xlsx"
+  sheetName?: string; // 默认 "Sheet1"
+}
+
 function pickMatrix<CellType extends CellBase>(
   opts: BuildOptions<CellType>
 ): Matrix.Matrix<CellType> {
   const base = opts.useEvaluated && opts.evaluatedData ? opts.evaluatedData : opts.data;
   if (opts.selection) {
     const range = opts.selection.toRange(base);
-    if (range) return Matrix.slice(range.start, range.end, base);
+    if (range) {
+      return Matrix.slice(range.start, range.end, base);
+    }
   }
   return base;
 }
@@ -82,7 +89,9 @@ export function exportToCSV<CellType extends CellBase>(
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = filename;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 }
 
@@ -98,11 +107,40 @@ export function exportToJSON<CellType extends CellBase>(
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = filename;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
 }
 
-// 预留：XLSX（如需可集成 SheetJS）
-// export async function exportToXLSX(...) { /* 使用 xlsx 构建工作簿 */ }
+export async function exportToXLSX<CellType extends CellBase>(
+  build: BuildOptions<CellType>,
+  xlsxOpts: XlsxOptions = {}
+) {
+  const { filename = "spreadsheet.xlsx", sheetName = "Sheet1" } = xlsxOpts;
+
+  const picked = pickMatrix(build);
+  const withHeader = withHeaders(picked, build);
+  const aoa: (string | number | boolean | null)[][] = withHeader.map((row) =>
+    row.map((cell) => cell?.value ?? null)
+  );
+
+  const XLSX = await import("xlsx");
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+  const blob = new Blob([out], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
 
 
