@@ -13,7 +13,7 @@ Basic spreadsheet component with cell editing
 npx @react-spreadsheet/cli add spreadsheet
 ```
 
-**文件数量:** 48  
+**文件数量:** 49  
 **依赖:** classnames, fast-formula-parser, use-context-selector, react-dnd, react-dnd-html5-backend
 
 
