@@ -101,10 +101,15 @@
   max-width: var(--row-indicator-width) !important;
 }
 
-.Spreadsheet__header--column {
+.Spreadsheet__header.Spreadsheet__header--column {
   min-width: var(--column-indicator-width) !important;
   width: var(--column-indicator-width) !important;
   max-width: var(--column-indicator-width) !important;
+  /* 让列标题文字更清晰，不再使用灰色只读色 */
+  color: var(--text-color);
+  font-weight: 500;
+  text-align: center;
+  font-size: 0.9em;
 }
 
 .Spreadsheet__header--resize-cursor {
