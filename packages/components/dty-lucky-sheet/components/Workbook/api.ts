@@ -353,5 +353,21 @@ export function generateAPIs(
         });
       });
     },
+
+    startEdit: (row: number, column: number, options: api.CommonOptions = {}) =>
+      setContext((draftCtx) => {
+        const sheetId = options.id || draftCtx.currentSheetId;
+        if (sheetId !== draftCtx.currentSheetId) {
+          return; // Cannot start editing a cell on a non-active sheet
+        }
+        // Set the selection to the specified cell
+        api.setSelection(
+          draftCtx,
+          { row: [row, row], column: [column, column] },
+          options
+        );
+        // Trigger cell edit mode
+        draftCtx.luckysheetCellUpdate = [row, column];
+      }),
   };
 }

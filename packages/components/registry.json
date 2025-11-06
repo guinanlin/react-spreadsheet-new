@@ -282,7 +282,6 @@
         "hooks/useOutsideClick.ts",
         "hooks/usePrevious.tsx",
         "formula-parser/index.js",
-        "formula-parser/index.ts",
         "formula-parser/parser.js",
         "formula-parser/error.js",
         "formula-parser/supported-formulas.js",

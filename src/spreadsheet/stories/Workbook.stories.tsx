@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { StoryFn, Meta, StoryObj } from "@storybook/react";
+import '@/styles/globals.css';
 import {
   createEmptyMatrix,
   Workbook,
@@ -131,11 +132,18 @@ const DEFAULT_SHEETS: WorkbookSheet<StringCell>[] = [
 ];
 
 const meta: Meta<WorkbookProps<StringCell>> = {
-  title: "Workbook",
+  title: "Spreadsheet/Workbook",
   component: Workbook,
+  tags: ["autodocs"],
   parameters: {
     controls: {
       expanded: true,
+    },
+    docs: {
+      description: {
+        component:
+          "Workbook 是一个多 Sheet 的容器组件，封装了 Spreadsheet 并提供标签切换、受控/非受控模式，支持将数据变化与选择事件按 Sheet 维度上报。",
+      },
     },
   },
   args: {
