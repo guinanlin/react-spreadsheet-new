@@ -237,6 +237,8 @@ npx @goodhawk/react-spreadsheet-cli add
 
 # 添加单个组件
 npx @goodhawk/react-spreadsheet-cli add spreadsheet
+npx @goodhawk/react-spreadsheet-cli add dty-lucky-sheet
+
 
 # 添加多个组件
 npx @goodhawk/react-spreadsheet-cli add spreadsheet pivot-table

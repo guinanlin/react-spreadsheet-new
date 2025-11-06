@@ -363,7 +363,7 @@ export function generateAPIs(
         // Set the selection to the specified cell
         api.setSelection(
           draftCtx,
-          { row: [row, row], column: [column, column] },
+          [{ row: [row, row], column: [column, column] }],
           options
         );
         // Trigger cell edit mode
