@@ -847,7 +847,7 @@ export const WithSelectCell: StoryObj = {
   parameters: {
     docs: {
       description: {
-        story: '下拉选择单元格示例，展示如何创建带有下拉选择器的单元格，适用于枚举类型的数据。',
+        story: '下拉选择单元格示例，单元格编辑器集成了 DtyInput，可异步搜索并选择结果。',
       },
     },
   },

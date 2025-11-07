@@ -51,15 +51,20 @@ export function detectPattern(value: any): FillPattern {
 /**
  * 从值中提取数字和文本部分
  */
-function extractTextNumber(value: string): { text: string; number: number } {
+function extractTextNumber(value: string): {
+  text: string;
+  number: number;
+  digits: number;
+} {
   const match = value.match(/^(.*?)(\d+)$/);
   if (match) {
     return {
       text: match[1],
       number: parseInt(match[2], 10),
+      digits: match[2].length,
     };
   }
-  return { text: value, number: 0 };
+  return { text: value, number: 0, digits: 0 };
 }
 
 /**
@@ -323,7 +328,13 @@ function generateFillCell<Cell extends CellBase>(
     case "text-number": {
       const extracted = extractTextNumber(String(baseCell.value));
       const newNumber = extracted.number + patternInfo.increment * offset;
-      newValue = `${extracted.text}${newNumber}`;
+      const digits = extracted.digits || String(Math.abs(extracted.number)).length;
+      const isNegative = newNumber < 0;
+      const absoluteNumber = Math.abs(newNumber);
+      const padded = digits > 0
+        ? String(absoluteNumber).padStart(digits, "0")
+        : String(absoluteNumber);
+      newValue = `${extracted.text}${isNegative ? "-" : ""}${padded}`;
       break;
     }
 
