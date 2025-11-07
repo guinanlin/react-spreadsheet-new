@@ -132,7 +132,7 @@ function additionalCellOps(
 export function filterPatch(patches: Patch[]) {
   return _.filter(
     patches,
-    (p) =>
+    (p: Patch) =>
       p.path[0] === "luckysheetfile" && p.path[2] !== "luckysheet_select_save"
   );
 }
@@ -169,27 +169,28 @@ export function patchToOp(
   options?: PatchOptions,
   undo: boolean = false
 ): Op[] {
-  let ops = patches.map((p) => {
+  let ops = patches.map((p: Patch) => {
     const op: Op = {
       op: p.op,
       value: p.value,
       path: p.path,
     };
-    if (p.path[0] === "luckysheetfile" && _.isNumber(p.path[1])) {
-      const id = ctx.luckysheetfile[p.path[1]].id!;
+    const sheetIndex = p.path[1];
+    if (p.path[0] === "luckysheetfile" && typeof sheetIndex === "number") {
+      const id = ctx.luckysheetfile[sheetIndex].id!;
       op.id = id;
       op.path = p.path.slice(2);
       if (_.isEqual(op.path, ["calcChain", "length"])) {
         op.path = ["calcChain"];
-        op.value = ctx.luckysheetfile[p.path[1]].calcChain;
+        op.value = ctx.luckysheetfile[sheetIndex].calcChain;
       }
     }
     return op;
   });
-  _.every(ops, (p) => {
+  _.every(ops, (p: Op) => {
     if (
       p.op === "replace" &&
-      !_.isNil(p.value?.hl) &&
+      p.value?.hl != null &&
       p.path.length === 3 &&
       p.path![0] === "data"
     ) {
@@ -206,7 +207,10 @@ export function patchToOp(
     }
   });
   if (options?.insertRowColOp) {
-    const [nonDataOps, dataOps] = _.partition(ops, (p) => p.path[0] !== "data");
+    const [nonDataOps, dataOps] = _.partition(
+      ops,
+      (p: Op) => p.path[0] !== "data"
+    ) as [Op[], Op[]];
     // find out formula cells as their formula range may be changed
     const formulaOps = extractFormulaCellOps(dataOps);
     ops = nonDataOps;
@@ -258,7 +262,10 @@ export function patchToOp(
       ops = [...ops, ...cellOps];
     }
   } else if (options?.deleteRowColOp) {
-    const [nonDataOps, dataOps] = _.partition(ops, (p) => p.path[0] !== "data");
+    const [nonDataOps, dataOps] = _.partition(
+      ops,
+      (p: Op) => p.path[0] !== "data"
+    ) as [Op[], Op[]];
     // find out formula cells as their formula range may be changed
     const formulaOps = extractFormulaCellOps(dataOps);
     ops = nonDataOps;
@@ -275,8 +282,8 @@ export function patchToOp(
   } else if (options?.addSheetOp) {
     const [addSheetOps, otherOps] = _.partition(
       ops,
-      (op) => op.path.length === 0 && op.op === "add"
-    );
+      (op: Op) => op.path.length === 0 && op.op === "add"
+    ) as [Op[], Op[]];
     options.id = options.addSheet!.id as string;
     if (undo) {
       // 撤消增表
@@ -296,7 +303,7 @@ export function patchToOp(
         const sheetsRight = ctx.luckysheetfile.filter(
           (sheet) => (sheet?.order as number) >= (order as number)
         );
-        _.forEach(sheetsRight, (sheet) => {
+        _.forEach(sheetsRight, (sheet: Sheet) => {
           ops.push({
             id: sheet.id,
             op: "replace",
@@ -339,7 +346,7 @@ export function patchToOp(
           (sheet?.order as number) >= (order as number) &&
           sheet.id !== options.deleteSheetOp?.id
       );
-      _.forEach(sheetsRight, (sheet) => {
+      _.forEach(sheetsRight, (sheet: Sheet) => {
         ops.push({
           id: sheet.id,
           op: "replace",
@@ -362,7 +369,7 @@ export function patchToOp(
         const sheetsRight = ctx.luckysheetfile.filter(
           (sheet) => (sheet?.order as number) >= (order as number)
         );
-        _.forEach(sheetsRight, (sheet) => {
+        _.forEach(sheetsRight, (sheet: Sheet) => {
           ops.push({
             id: sheet.id,
             op: "replace",
@@ -379,10 +386,10 @@ export function patchToOp(
 export function opToPatch(ctx: Context, ops: Op[]): [Patch[], Op[]] {
   const [normalOps, specialOps] = _.partition(
     ops,
-    (op) => op.op === "add" || op.op === "remove" || op.op === "replace"
-  );
+    (op: Op) => op.op === "add" || op.op === "remove" || op.op === "replace"
+  ) as [Op[], Op[]];
   const additionalPatches: Patch[] = [];
-  const patches = normalOps.map((op) => {
+  const patches = normalOps.map((op: Op) => {
     const patch: Patch = {
       op: op.op as "add" | "remove" | "replace",
       value: op.value,

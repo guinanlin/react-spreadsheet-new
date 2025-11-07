@@ -2,7 +2,7 @@ import _ from "lodash";
 import { mergeCells } from "./merge";
 import { Context, getFlowdata } from "../context";
 // import { locale } from "../locale";
-import { Cell, CellMatrix, GlobalCache } from "../types";
+import { Cell, CellMatrix, GlobalCache, Selection } from "../types";
 import { getSheetIndex, isAllowEdit } from "../utils";
 import {
   getRangetxt,
@@ -67,7 +67,8 @@ export function updateFormatCell(
   }
   if (attr === "ct") {
     for (let r = row_st; r <= row_ed; r += 1) {
-      if (!_.isNil(ctx.config.rowhidden) && !_.isNil(ctx.config.rowhidden[r])) {
+      const rowhidden = ctx.config.rowhidden;
+      if (rowhidden?.[r] != null) {
         continue;
       }
 
@@ -113,11 +114,11 @@ export function updateFormatCell(
 
         if (cell && _.isPlainObject(cell)) {
           cell.m = `${mask}`;
-          if (_.isNil(cell.ct)) {
+          if (!cell.ct) {
             cell.ct = {};
           }
-          cell.ct.fa = foucsStatus;
-          cell.ct.t = type;
+          cell.ct!.fa = foucsStatus;
+          cell.ct!.t = type;
         } else {
           d[r][c] = {
             ct: { fa: foucsStatus, t: type },
@@ -173,7 +174,8 @@ export function updateFormatCell(
       return;
     }
     for (let r = row_st; r <= row_ed; r += 1) {
-      if (!_.isNil(ctx.config.rowhidden) && !_.isNil(ctx.config.rowhidden[r])) {
+      const rowhidden = ctx.config.rowhidden;
+      if (rowhidden?.[r] != null) {
         continue;
       }
 
@@ -263,7 +265,7 @@ export function updateFormat(
     cfg.rowlen = {};
   }
 
-  _.forEach(ctx.luckysheet_select_save, (selection) => {
+  _.forEach(ctx.luckysheet_select_save, (selection: Selection) => {
     const [row_st, row_ed] = selection.row;
     const [col_st, col_ed] = selection.column;
 
@@ -795,7 +797,7 @@ export function autoSelectionFormula(
   }
   if (!ctx.luckysheet_select_save) return;
 
-  _.forEach(ctx.luckysheet_select_save, (selection) => {
+  _.forEach(ctx.luckysheet_select_save, (selection: Selection) => {
     const [st_r, ed_r] = selection.row;
     const [st_c, ed_c] = selection.column;
     const row_index = selection.row_focus;
@@ -1289,7 +1291,8 @@ export function handleClearFormat(ctx: Context) {
     const [rowSt, rowEd] = selection.row;
     const [colSt, colEd] = selection.column;
     for (let r = rowSt; r <= rowEd; r += 1) {
-      if (!_.isNil(ctx.config.rowhidden) && !_.isNil(ctx.config.rowhidden[r])) {
+      const rowhidden = ctx.config.rowhidden;
+      if (rowhidden?.[r] != null) {
         continue;
       }
       for (let c = colSt; c <= colEd; c += 1) {
@@ -1432,7 +1435,7 @@ export function handleBorder(
     cfg.borderInfo.push(borderInfo);
   } else {
     const rangeList: string[] = [];
-    _.forEach(ctx.luckysheet_select_save, (selection) => {
+    _.forEach(ctx.luckysheet_select_save, (selection: Selection) => {
       for (let r = selection.row[0]; r <= selection.row[1]; r += 1) {
         for (let c = selection.column[0]; c <= selection.column[1]; c += 1) {
           const range = `${r}_${c}`;
