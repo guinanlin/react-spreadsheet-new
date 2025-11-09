@@ -9,12 +9,9 @@ import * as Matrix from "../data-structures/matrix";
 import { CellBase } from "../types";
 import { PointSet } from "./point-set";
 
-// Define RangeRef type locally if not exported by the library
-type RangeRef = {
-  from: CellRef;
-  to: CellRef;
-  sheet: string;
-};
+type ParserRangeRef = Parameters<
+  Exclude<FormulaParserConfig["onRange"], undefined>
+>[0];
 
 export const FORMULA_VALUE_PREFIX = "=";
 
@@ -47,7 +44,9 @@ export function createFormulaParser(
       if (!isNaN(cell?.value as number)) return Number(cell?.value);
       return cell?.value;
     },
-    onRange: (ref: RangeRef) => {
+    onRange: (ref: ParserRangeRef) => {
+      const sheetId = ref.sheet ?? "Sheet1";
+      void sheetId;
       const size = Matrix.getSize(data);
       const start: Point = {
         row: ref.from.row - 1,
