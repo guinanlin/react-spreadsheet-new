@@ -604,8 +604,48 @@ git commit -m "Update component templates"
   console.log(`  - 总文件数: ${Object.values(registry.components).reduce((sum, c) => sum + c.files.length, 0)}`);
 }
 
+/**
+ * 仅生成 registry.json（不复制文件、不清空目录）
+ * 用于：CLI 从 GitHub 拉取 registry，推前确保 registry 包含所有组件
+ * 用法: node scripts/sync-templates.js --registry-only
+ */
+function buildRegistryFromComponents() {
+  const registry = {
+    $schema: 'https://react-spreadsheet.dev/registry.json',
+    components: {},
+  };
+  for (const [key, config] of Object.entries(COMPONENTS)) {
+    const files = [...(config.files || [])];
+    if (config.subdirs) {
+      for (const [subdir, subdirFiles] of Object.entries(config.subdirs)) {
+        subdirFiles.forEach((f) => files.push(`${subdir}/${f}`));
+      }
+    }
+    registry.components[config.name] = {
+      name: config.name,
+      description: config.description,
+      type: 'components:ui',
+      files,
+      dependencies: config.dependencies || [],
+    };
+  }
+  return registry;
+}
+
+async function syncRegistryOnly() {
+  console.log('🔄 仅生成 registry.json（不复制文件）...\n');
+  const registry = buildRegistryFromComponents();
+  await ensureDir(TEMPLATES_DIR);
+  const registryPath = path.join(TEMPLATES_DIR, 'registry.json');
+  await writeJson(registryPath, registry, { spaces: 2 });
+  console.log('✅ registry.json 已生成');
+  console.log(`  - 组件数量: ${Object.keys(registry.components).length}`);
+  console.log(`  - 总文件数: ${Object.values(registry.components).reduce((sum, c) => sum + c.files.length, 0)}\n`);
+}
+
 // 运行
-syncTemplates().catch((error) => {
+const registryOnly = process.argv.includes('--registry-only');
+(registryOnly ? syncRegistryOnly() : syncTemplates()).catch((error) => {
   console.error('❌ 同步失败:', error);
   process.exit(1);
 });
