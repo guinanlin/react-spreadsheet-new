@@ -91,7 +91,6 @@
         "engine.ts",
         "hooks.ts",
         "api/ApiClient.ts",
-        "api/api-client.ts",
         "data/DataBinding.ts",
         "data/ServerDataService.ts"
       ],
@@ -283,7 +282,6 @@
         "hooks/useOutsideClick.ts",
         "hooks/usePrevious.tsx",
         "formula-parser/index.js",
-        "formula-parser/index.ts",
         "formula-parser/parser.js",
         "formula-parser/error.js",
         "formula-parser/supported-formulas.js",

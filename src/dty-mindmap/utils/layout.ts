@@ -44,26 +44,33 @@ const getMeasureElement = (): HTMLDivElement | null => {
   return measureEl;
 };
 
-const calculateNodeDimensions = (text: string) => {
+/**
+ * 计算节点宽高。若传 widthHint 则固定宽度、按该宽度换行计算高度（用于 manualWidth）
+ */
+const calculateNodeDimensions = (text: string, widthHint?: number) => {
   const element = getMeasureElement();
+  const clampWidth = (w: number) => Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, w));
+
   if (!element) {
-    return {
-      width: Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, text.length * 8)),
-      height: MIN_NODE_HEIGHT,
-    };
+    const w = widthHint != null ? clampWidth(widthHint) : Math.max(MIN_NODE_WIDTH, Math.min(MAX_NODE_WIDTH, text.length * 8));
+    return { width: w, height: MIN_NODE_HEIGHT };
   }
 
-  element.style.maxWidth = `${MAX_NODE_WIDTH}px`;
-  element.style.width = "fit-content";
   element.textContent = text || " ";
-
-  const rect = element.getBoundingClientRect();
-  const naturalWidth = rect.width + 2;
-  const width = Math.max(Math.min(naturalWidth, MAX_NODE_WIDTH), MIN_NODE_WIDTH);
-
-  element.style.width = `${width}px`;
+  let width: number;
+  if (widthHint != null && widthHint > 0) {
+    width = clampWidth(widthHint);
+    element.style.width = `${width}px`;
+    element.style.maxWidth = `${width}px`;
+  } else {
+    element.style.maxWidth = `${MAX_NODE_WIDTH}px`;
+    element.style.width = "fit-content";
+    const rect = element.getBoundingClientRect();
+    const naturalWidth = rect.width + 2;
+    width = clampWidth(naturalWidth);
+    element.style.width = `${width}px`;
+  }
   const height = Math.max(element.getBoundingClientRect().height, MIN_NODE_HEIGHT);
-
   return { width, height };
 };
 
@@ -91,12 +98,17 @@ export const computeLayout = (
     });
   }
 
+  const ATTRIBUTES_ROW_HEIGHT = 28;
+
   const calculateHeight = (nodeId: string, depth: number): number => {
     const node = nodes[nodeId] as LayoutNode | undefined;
     if (!node) return 0;
 
     node.depth = depth;
-    const { width, height } = calculateNodeDimensions(node.text);
+    const widthHint = node.manualWidth;
+    const { width, height: textHeight } = calculateNodeDimensions(node.text, widthHint);
+    const hasAttributes = node.attributes && node.attributes.length > 0;
+    const height = textHeight + (hasAttributes ? ATTRIBUTES_ROW_HEIGHT : 0);
     node.width = width;
     node.height = height;
 

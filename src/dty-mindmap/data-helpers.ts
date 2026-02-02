@@ -10,6 +10,8 @@ const cloneNode = (node: MindMapNode): MindMapNode => ({
   depth: node.depth,
   manualX: node.manualX,
   manualY: node.manualY,
+  attributes: node.attributes ? [...node.attributes] : undefined,
+  manualWidth: node.manualWidth,
 });
 
 export const cloneMindMapData = (data: MindMapData): MindMapData => ({
@@ -44,7 +46,18 @@ export const normalizeMindMapData = (value: unknown): MindMapData => {
   const normalizedNodes: Record<string, MindMapNode> = {};
   for (const [id, node] of Object.entries(nodesInput)) {
     if (!node || typeof node !== "object") continue;
-    const { text, parentId, children, isExpanded, depth, manualX, manualY } = node as MindMapNode;
+    const { text, parentId, children, isExpanded, depth, manualX, manualY, attributes, manualWidth } = node as MindMapNode;
+    const attrs: MindMapNode["attributes"] = Array.isArray(attributes)
+      ? attributes
+          .filter((a): a is { label: string } | { key: string; value: string } => a != null && typeof a === "object")
+          .map((a) => {
+            if ("label" in a && typeof a.label === "string") return { label: a.label };
+            if ("key" in a && "value" in a && typeof a.key === "string" && typeof a.value === "string")
+              return { key: a.key, value: a.value };
+            return null;
+          })
+          .filter((a): a is NonNullable<typeof a> => a != null)
+      : undefined;
     normalizedNodes[id] = {
       id,
       text: typeof text === "string" ? text : "",
@@ -56,6 +69,8 @@ export const normalizeMindMapData = (value: unknown): MindMapData => {
       depth: typeof depth === "number" ? depth : 0,
       manualX: typeof manualX === "number" ? manualX : undefined,
       manualY: typeof manualY === "number" ? manualY : undefined,
+      attributes: attrs?.length ? attrs : undefined,
+      manualWidth: typeof manualWidth === "number" && manualWidth > 0 ? manualWidth : undefined,
     };
   }
 

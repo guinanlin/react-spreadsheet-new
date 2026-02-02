@@ -1,5 +1,10 @@
 export type NodeId = string;
 
+/** 节点底部自定义属性：纯标签 "委外" 或键值 "工艺: 委外电镀" */
+export type NodeAttribute =
+  | { label: string }
+  | { key: string; value: string };
+
 export interface MindMapNode {
   id: NodeId;
   text: string;
@@ -14,6 +19,10 @@ export interface MindMapNode {
   color?: string;
   manualX?: number;
   manualY?: number;
+  /** 节点底部展示的自定义属性（标签），如 委外、工艺:委外电镀 */
+  attributes?: NodeAttribute[];
+  /** 指定节点宽度（px），不设则按内容自动计算；设了可避免内容多时过于窄、换行过多 */
+  manualWidth?: number;
 }
 
 export interface MindMapData {

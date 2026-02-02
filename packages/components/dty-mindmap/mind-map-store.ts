@@ -176,6 +176,7 @@ export class MindMapStore {
       isExpanded: true,
     };
 
+    // 仅在有已有兄弟节点时为 newNode 设置 manualX/manualY，否则交给 layout 自动垂直排列，避免与后续兄弟叠在一起
     let newNodeManualX: number | undefined;
     let newNodeManualY: number | undefined;
 

@@ -96,3 +96,42 @@ export const CanvasOnly: Story = {
     showCanvasControls: true,
   },
 };
+
+/** 子节点带底部自定义属性（委外、工艺: 委外电镀 等标签） */
+export const WithNodeAttributes: Story = {
+  args: {
+    initialData: {
+      rootId: "root",
+      nodes: {
+        root: {
+          id: "root",
+          text: "工艺节点",
+          parentId: null,
+          children: ["a1", "a2"],
+          isExpanded: true,
+          depth: 0,
+        },
+        a1: {
+          id: "a1",
+          text: "【A1-2】 26-01-1罩光\n哑粉色上盖二工位委\n外:委外电镀",
+          parentId: "root",
+          children: [],
+          isExpanded: true,
+          manualWidth: 320,
+          attributes: [
+            { label: "委外" },
+            { key: "工艺", value: "委外电镀" },
+          ],
+        },
+        a2: {
+          id: "a2",
+          text: "【B1】 内制工序",
+          parentId: "root",
+          children: [],
+          isExpanded: true,
+          attributes: [{ label: "内制" }],
+        },
+      },
+    },
+  },
+};

@@ -475,8 +475,8 @@ const COMPONENTS = {
 async function syncTemplates() {
   console.log('🔄 开始同步组件模板...\n');
 
-  // 清空并重建 components 目录
-  await emptyDir(TEMPLATES_DIR);
+  // 只确保目录存在，不删除（避免 Windows EPERM：删除/重建整目录易被拦截）
+  await ensureDir(TEMPLATES_DIR);
 
   const registry = {
     $schema: 'https://react-spreadsheet.dev/registry.json',

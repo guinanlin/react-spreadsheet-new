@@ -25,6 +25,7 @@ export { computeLayout } from "./utils/layout";
 export type {
   MindMapData,
   MindMapNode,
+  NodeAttribute,
   NodeId,
   ViewportState,
   HistoryState,

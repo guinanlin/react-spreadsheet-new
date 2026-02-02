@@ -1,0 +1,215 @@
+.Spreadsheet {
+  --background-color: white;
+  --text-color: black;
+  --readonly-text-color: rgb(0 0 0 / 40%);
+  --outline-color: #4285f4;
+  --outline-background-color: rgb(160 195 255 / 20%);
+  --border-color: hsl(2deg 0% 91%);
+  --header-background-color: rgb(0 0 0 / 4%);
+  --elevation: 0 2px 5px rgb(0 0 0 / 40%);
+  --row-indicator-width: 40px;
+  --column-indicator-width: 50px;
+
+  position: relative;
+  overflow: visible;
+  background: var(--background-color);
+  color: var(--text-color);
+  display: inline-block;
+}
+
+.Spreadsheet--dark-mode {
+  --background-color: black;
+  --text-color: white;
+  --readonly-text-color: rgb(255 255 255 / 40%);
+  --header-background-color: rgb(255 255 255 / 4%);
+  --border-color: hsl(2deg 0% 19%);
+}
+
+.Spreadsheet__active-cell {
+  position: absolute;
+  border: 2px solid var(--outline-color);
+  box-sizing: border-box;
+}
+
+.Spreadsheet__active-cell--edit {
+  background: var(--background-color);
+  box-shadow: var(--elevation);
+}
+
+.Spreadsheet__table {
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.Spreadsheet__cell,
+.Spreadsheet__active-cell {
+  cursor: cell;
+}
+
+.Spreadsheet__cell {
+  outline: none;
+}
+
+.Spreadsheet__cell--readonly {
+  color: var(--readonly-text-color);
+}
+
+.Spreadsheet__cell,
+.Spreadsheet__header:not(.Spreadsheet__header--row) {
+  min-width: 6em;
+  min-height: 1.9em;
+  height: 1.9em;
+  max-height: 1.9em;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  word-break: keep-all;
+  white-space: nowrap;
+  text-align: left;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.Spreadsheet__header {
+  background: var(--header-background-color);
+  color: var(--readonly-text-color);
+  text-align: center;
+  font: inherit;
+  position: relative;
+}
+
+.Spreadsheet__header--row {
+  min-width: 0 !important;
+  width: var(--row-indicator-width) !important;
+  max-width: var(--row-indicator-width) !important;
+  min-height: 1.9em;
+  height: 1.9em;
+  max-height: 1.9em;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  word-break: keep-all;
+  white-space: nowrap;
+  text-align: center;
+  box-sizing: border-box;
+  user-select: none;
+  padding: 0 !important;
+}
+
+/* 强制设置行号列宽度 */
+.Spreadsheet__table tr th:first-child {
+  width: var(--row-indicator-width) !important;
+  min-width: 0 !important;
+  max-width: var(--row-indicator-width) !important;
+}
+
+.Spreadsheet__header.Spreadsheet__header--column {
+  min-width: var(--column-indicator-width) !important;
+  width: var(--column-indicator-width) !important;
+  max-width: var(--column-indicator-width) !important;
+  /* 让列标题文字更清晰，不再使用灰色只读色 */
+  color: var(--text-color);
+  font-weight: 500;
+  text-align: center;
+  font-size: 0.9em;
+}
+
+.Spreadsheet__header--resize-cursor {
+  cursor: col-resize !important;
+}
+
+.Spreadsheet__header--resizing {
+  cursor: col-resize !important;
+  user-select: none;
+}
+
+.Spreadsheet__column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.Spreadsheet__header--selected {
+  background: #5f6268;
+  color: #fff;
+}
+
+.Spreadsheet__header,
+.Spreadsheet__data-viewer,
+.Spreadsheet__data-editor input {
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.Spreadsheet__data-viewer--preserve-breaks {
+  white-space: pre-wrap;
+}
+
+.Spreadsheet__data-editor,
+.Spreadsheet__data-editor input {
+  width: 100%;
+  height: 100%;
+}
+
+.Spreadsheet__data-editor input {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+  margin: 0;
+}
+
+.Spreadsheet__data-viewer--boolean {
+  text-align: center;
+}
+
+.Spreadsheet__floating-rect {
+  position: absolute;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.Spreadsheet__floating-rect--hidden {
+  display: none;
+}
+
+.Spreadsheet__floating-rect--selected {
+  background: var(--outline-background-color);
+  border: 2px var(--outline-color) solid;
+}
+
+.Spreadsheet__floating-rect--dragging {
+  border: none;
+}
+
+.Spreadsheet__floating-rect--copied {
+  border: 2px var(--outline-color) dashed;
+}
+
+/* Fill Handle Styles */
+.Spreadsheet__fill-handle-trigger {
+  z-index: 100;
+}
+
+.Spreadsheet__fill-handle {
+  background: var(--outline-color);
+  border: 1px solid white;
+  box-sizing: border-box;
+  cursor: crosshair;
+  z-index: 101;
+}
+
+.Spreadsheet__fill-handle:hover {
+  cursor: crosshair;
+}
+
+/* Fill Preview Styles */
+.Spreadsheet__floating-rect--fill-preview {
+  background: var(--outline-background-color);
+  border: 2px var(--outline-color) solid;
+  border-style: dashed;
+  opacity: 0.7;
+}

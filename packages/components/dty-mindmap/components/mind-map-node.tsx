@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { MIN_NODE_HEIGHT, MIN_NODE_WIDTH, NODE_STYLES } from "../constants";
-import type { MindMapNode, ViewportState } from "../types";
+import type { MindMapNode, NodeAttribute, ViewportState } from "../types";
 import { ThemeMode, THEMES } from "../types";
+
+const ATTRIBUTES_ROW_HEIGHT = 28;
+
+function attributeLabel(a: NodeAttribute): string {
+  if ("label" in a) return a.label;
+  return `${a.key}: ${a.value}`;
+}
 
 interface MindMapNodeProps {
   node: MindMapNode;
@@ -87,6 +94,7 @@ export const MindMapNodeComponent = ({
     if (target.closest("textarea")) return;
     if (target.closest("[data-collapse-toggle]")) return;
     if (target.closest("[data-add-child]")) return;
+    if (target.closest("[data-node-tags]")) return;
     if (target.closest("circle")) return;
     if (target.closest("path")) return;
     if (target.closest("text")) return;
@@ -185,20 +193,38 @@ export const MindMapNodeComponent = ({
         height={height}
         className="pointer-events-none"
       >
-        <div className="w-full h-full">
-          {isEditing ? (
-            <textarea
-              ref={inputRef}
-              value={node.text}
-              onChange={(event) => onEditChange(node.id, event.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={() => onEditEnd(node.id, node.text)}
-              className="pointer-events-auto w-full h-full bg-transparent resize-none outline-none text-slate-800 dark:text-white border-0 m-0 overflow-hidden"
-              style={{ ...textStyle, margin: 0 }}
-            />
-          ) : (
-            <div className={`w-full h-full ${styles.text}`} style={textStyle}>
-              {node.text}
+        <div className="w-full h-full flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col">
+            {isEditing ? (
+              <textarea
+                ref={inputRef}
+                value={node.text}
+                onChange={(event) => onEditChange(node.id, event.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={() => onEditEnd(node.id, node.text)}
+                className="pointer-events-auto w-full flex-1 bg-transparent resize-none outline-none text-slate-800 dark:text-white border-0 m-0 overflow-hidden"
+                style={{ ...textStyle, margin: 0 }}
+              />
+            ) : (
+              <div className={`flex-1 min-h-0 overflow-auto ${styles.text}`} style={textStyle}>
+                {node.text}
+              </div>
+            )}
+          </div>
+          {!isEditing && node.attributes && node.attributes.length > 0 && (
+            <div
+              data-node-tags
+              className="pointer-events-auto flex-shrink-0 pt-1.5 px-1 flex flex-wrap gap-1.5 items-center border-t border-slate-200/60 dark:border-slate-600/60"
+              style={{ minHeight: ATTRIBUTES_ROW_HEIGHT }}
+            >
+              {node.attributes.map((a, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-600/80"
+                >
+                  {attributeLabel(a)}
+                </span>
+              ))}
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 import type { MindMapData } from "./types";
 
-export const MAX_NODE_WIDTH = 400;
+export const MAX_NODE_WIDTH = 560;
 export const MIN_NODE_WIDTH = 50;
 export const MIN_NODE_HEIGHT = 40;
 export const HORIZONTAL_GAP = 60;
