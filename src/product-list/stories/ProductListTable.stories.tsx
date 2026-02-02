@@ -39,7 +39,7 @@ const sampleProducts: ProductItem[] = [
 ];
 
 const meta: Meta<typeof ProductListTable> = {
-  title: 'ProductListTable',
+  title: 'ProductList/ProductListTable',
   component: ProductListTable,
   parameters: {
     layout: 'padded',

@@ -444,6 +444,32 @@ const COMPONENTS = {
       'classnames',
     ],
   },
+  'dty-mindmap': {
+    name: 'dty-mindmap',
+    description: '思维导图组件，支持节点编辑、拖拽、缩放与主题切换',
+    basePath: 'dty-mindmap',
+    files: [
+      'index.ts',
+      'constants.ts',
+      'data-helpers.ts',
+      'DtyMindMap.tsx',
+      'mind-map-store.ts',
+      'types.ts',
+      'use-mind-map.ts',
+    ],
+    subdirs: {
+      'components': [
+        'canvas-controls.tsx',
+        'instructions.tsx',
+        'mind-map-edge.tsx',
+        'mind-map-node.tsx',
+        'toolbar.tsx',
+      ],
+      'hooks': ['use-behavior-subject-value.ts'],
+      'utils': ['layout.ts'],
+    },
+    dependencies: ['lucide-react', 'rxjs'],
+  },
 };
 
 async function syncTemplates() {
