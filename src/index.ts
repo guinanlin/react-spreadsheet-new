@@ -5,6 +5,9 @@ export { default } from "./spreadsheet";
 // Export dtyinput module
 export * from "./dtyinput";
 
+// Export dty-print-designer module
+export * from "./dty-print-designer";
+
 // Export pivot module
 export * from "./pivot";
 

@@ -6,6 +6,7 @@
   --outline-background-color: rgb(160 195 255 / 20%);
   --border-color: hsl(2deg 0% 91%);
   --header-background-color: rgb(0 0 0 / 4%);
+  --sticky-header-background-color: hsl(210 20% 94%);
   --elevation: 0 2px 5px rgb(0 0 0 / 40%);
   --row-indicator-width: 40px;
   --column-indicator-width: 50px;
@@ -15,6 +16,8 @@
   background: var(--background-color);
   color: var(--text-color);
   display: inline-block;
+  /* 确保 inline-block 与容器顶部严格对齐，消除基线偏移产生的顶部/底部缝隙 */
+  vertical-align: top;
 }
 
 .Spreadsheet--dark-mode {
@@ -22,6 +25,7 @@
   --text-color: white;
   --readonly-text-color: rgb(255 255 255 / 40%);
   --header-background-color: rgb(255 255 255 / 4%);
+  --sticky-header-background-color: hsl(210 20% 14%);
   --border-color: hsl(2deg 0% 19%);
 }
 
@@ -102,14 +106,14 @@
 }
 
 .Spreadsheet__header.Spreadsheet__header--column {
-  min-width: var(--column-indicator-width) !important;
-  width: var(--column-indicator-width) !important;
-  max-width: var(--column-indicator-width) !important;
-  /* 让列标题文字更清晰，不再使用灰色只读色 */
+  /* 初始最小宽度来自 CSS 变量；实际宽度由 <col> 元素控制，不能写死 max-width，否则 resize 无效 */
+  min-width: var(--column-indicator-width);
   color: var(--text-color);
   font-weight: 500;
   text-align: center;
   font-size: 0.9em;
+  /* 允许 resize 手柄轻微溢出到相邻列之间 */
+  overflow: visible;
 }
 
 .Spreadsheet__header--resize-cursor {
@@ -124,11 +128,39 @@
 .Spreadsheet__column-resize-handle {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 5px;
+  /* 向右偏移 3px，让手柄居中跨越两列之间的边框 */
+  right: -3px;
+  width: 8px;
   height: 100%;
   cursor: col-resize;
-  z-index: 10;
+  z-index: 20;
+  /* 默认隐藏；悬停到列头时渐显 */
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+/* 悬停到列头时显示分隔线 */
+.Spreadsheet__header--column:hover .Spreadsheet__column-resize-handle {
+  opacity: 1;
+}
+
+/* 手柄中间的竖线（2px 分隔线） */
+.Spreadsheet__column-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 70%;
+  border-radius: 1px;
+  background: var(--outline-color);
+  opacity: 0.55;
+}
+
+/* 正在拖拽时保持显示 */
+.Spreadsheet__header--resizing .Spreadsheet__column-resize-handle {
+  opacity: 1;
 }
 
 .Spreadsheet__header--selected {
@@ -212,4 +244,62 @@
   border: 2px var(--outline-color) solid;
   border-style: dashed;
   opacity: 0.7;
+}
+
+/* ─── Sticky header / row-indicator support ────────────────────────────────
+ * When .Spreadsheet--sticky-headers is present:
+ *   • The <thead> row is pinned to top (vertical scroll).
+ *   • The row-indicator <th> in every <tbody> row is pinned to left (horizontal scroll).
+ *   • The corner cell (thead th:first-child) is pinned in both directions.
+ *
+ * border-collapse:collapse + position:sticky causes missing borders in some
+ * browsers; we replicate borders with box-shadow instead and give every
+ * sticky cell a solid opaque background so it covers scrolling content.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Column header row (top sticky) ── */
+/*
+ * top: -1px 而非 0：
+ *   Chrome 在 border-collapse:collapse + position:sticky 时存在 1px 渲染偏移 bug，
+ *   表头底部正好贴合容器顶边时会留下 1px 透明缝隙，正在滚动的内容行从这道缝中透出。
+ *   将 sticky 吸附点上移 1px，让表头背景将该缝隙完全覆盖。
+ *
+ * box-shadow 仅保留向下的底部分隔线；原 "0 -1px 0"（向上）在 overflow 容器中
+ * 会被裁剪而不可见，同时还会制造另一条渲染缝，因此移除。
+ */
+.Spreadsheet--sticky-headers .Spreadsheet__table thead th {
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  background-color: var(--sticky-header-background-color);
+  box-shadow:
+    0 1px 0 var(--border-color),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Row indicator column (left sticky) ── */
+.Spreadsheet--sticky-headers .Spreadsheet__table tbody th.Spreadsheet__header--row {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--sticky-header-background-color);
+  /* right-side border for the sticky column */
+  box-shadow: 1px 0 0 var(--border-color), -1px 0 0 var(--border-color);
+}
+
+/* ── Corner indicator: sticky in BOTH directions ── */
+.Spreadsheet--sticky-headers .Spreadsheet__table thead th:first-child {
+  left: 0;
+  z-index: 3;
+  /* replicate both top and right-side borders */
+  box-shadow:
+    0  1px 0 var(--border-color),
+    0 -1px 0 var(--border-color),
+    1px 0 0 var(--border-color);
+}
+
+/* Selected header cells keep a readable background when sticky */
+.Spreadsheet--sticky-headers .Spreadsheet__table thead th.Spreadsheet__header--selected,
+.Spreadsheet--sticky-headers .Spreadsheet__table tbody th.Spreadsheet__header--selected {
+  background-color: #5f6268;
 }
