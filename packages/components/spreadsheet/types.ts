@@ -155,6 +155,16 @@ export type TableProps = React.PropsWithChildren<{
   hideColumnIndicators?: boolean | null;
   /** Width of the row indicators */
   rowIndicatorWidth?: string;
+  /**
+   * Default width of data columns (CSS value, e.g. "120px").
+   * Used to pre-size <col> elements before the user resizes them.
+   */
+  columnIndicatorWidth?: string;
+  /**
+   * When true the first child (HeaderRow) is rendered inside <thead> so that
+   * sticky-header CSS can pin it to the top of the scroll container.
+   */
+  stickyHeaders?: boolean;
 }>;
 
 /** Type of the Spreadsheet Table component */

@@ -1,12 +1,13 @@
-﻿import * as React from "react";
+import * as React from "react";
 import classNames from "classnames";
 import * as Types from "../../types";
 import * as Actions from "../../core/actions";
 import useDispatch from "../../hooks/use-dispatch";
 import useSelector from "../../hooks/use-selector";
 
-const RESIZE_HANDLE_WIDTH = 5; // 可拖动区域的宽度（像素）
-const MIN_COLUMN_WIDTH = 50; // 最小列宽（像素）
+/** 触发 resize 的右侧感应区域宽度（px）；手柄 div 也是这个宽度 */
+const RESIZE_HANDLE_WIDTH = 8;
+const MIN_COLUMN_WIDTH = 50;
 
 const ColumnIndicator: Types.ColumnIndicatorComponent = ({
   column,
@@ -17,65 +18,65 @@ const ColumnIndicator: Types.ColumnIndicatorComponent = ({
   const dispatch = useDispatch();
   const thRef = React.useRef<HTMLTableCellElement>(null);
   const [isResizing, setIsResizing] = React.useState(false);
-  const [showResizeCursor, setShowResizeCursor] = React.useState(false);
+  const [isOverHandle, setIsOverHandle] = React.useState(false);
   const resizeStateRef = React.useRef<{
     startX: number;
     startWidth: number;
     column: number;
   } | null>(null);
 
+  const isNearRightEdge = React.useCallback(
+    (event: React.MouseEvent<HTMLTableCellElement>) => {
+      const th = event.currentTarget;
+      const rect = th.getBoundingClientRect();
+      const offsetX = event.clientX - rect.left;
+      return rect.width - offsetX <= RESIZE_HANDLE_WIDTH;
+    },
+    []
+  );
+
   const handleClick = React.useCallback(
     (event: React.MouseEvent) => {
-      // 如果正在调整大小或者在调整柄区域，不触发选择
-      if (isResizing || showResizeCursor) {
+      if (isResizing || isOverHandle) {
         event.stopPropagation();
         return;
       }
       onSelect(column, event.shiftKey);
     },
-    [onSelect, column, isResizing, showResizeCursor]
+    [onSelect, column, isResizing, isOverHandle]
   );
 
-  const handleMouseMove = React.useCallback((event: React.MouseEvent<HTMLTableCellElement>) => {
-    if (resizeStateRef.current) {
-      return; // 正在拖动时不检查光标
-    }
-
-    const th = event.currentTarget;
-    const rect = th.getBoundingClientRect();
-    const offsetX = event.clientX - rect.left;
-    const isNearRightEdge = rect.width - offsetX <= RESIZE_HANDLE_WIDTH;
-
-    setShowResizeCursor(isNearRightEdge);
-  }, []);
+  const handleMouseMove = React.useCallback(
+    (event: React.MouseEvent<HTMLTableCellElement>) => {
+      if (resizeStateRef.current) return;
+      setIsOverHandle(isNearRightEdge(event));
+    },
+    [isNearRightEdge]
+  );
 
   const handleMouseLeave = React.useCallback(() => {
     if (!resizeStateRef.current) {
-      setShowResizeCursor(false);
+      setIsOverHandle(false);
     }
   }, []);
 
   const handleMouseDown = React.useCallback(
     (event: React.MouseEvent<HTMLTableCellElement>) => {
+      if (!isNearRightEdge(event)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
       const th = event.currentTarget;
       const rect = th.getBoundingClientRect();
-      const offsetX = event.clientX - rect.left;
-      const isNearRightEdge = rect.width - offsetX <= RESIZE_HANDLE_WIDTH;
-
-      if (isNearRightEdge) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const currentWidth = rect.width;
-        setIsResizing(true);
-        resizeStateRef.current = {
-          startX: event.clientX,
-          startWidth: currentWidth,
-          column,
-        };
-      }
+      setIsResizing(true);
+      resizeStateRef.current = {
+        startX: event.clientX,
+        startWidth: rect.width,
+        column,
+      };
     },
-    [column]
+    [column, isNearRightEdge]
   );
 
   React.useEffect(() => {
@@ -136,7 +137,7 @@ const ColumnIndicator: Types.ColumnIndicatorComponent = ({
       className={classNames("Spreadsheet__header", "Spreadsheet__header--column", {
         "Spreadsheet__header--selected": selected,
         "Spreadsheet__header--resizing": isResizing,
-        "Spreadsheet__header--resize-cursor": showResizeCursor,
+        "Spreadsheet__header--resize-cursor": isOverHandle || isResizing,
       })}
       onClick={handleClick}
       onMouseMove={handleMouseMove}
@@ -145,9 +146,8 @@ const ColumnIndicator: Types.ColumnIndicatorComponent = ({
       tabIndex={0}
     >
       {label !== undefined ? label : columnIndexToLabel(column)}
-      {showResizeCursor && (
-        <div className="Spreadsheet__column-resize-handle" />
-      )}
+      {/* 始终挂载 resize 手柄，通过 CSS hover / active 控制可见性 */}
+      <div className="Spreadsheet__column-resize-handle" />
     </th>
   );
 };

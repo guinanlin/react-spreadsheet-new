@@ -52,6 +52,22 @@ export type Props<CellType extends Types.CellBase> = {
    */
   darkMode?: boolean;
   /**
+   * When true, the column header row and row-indicator column are both pinned
+   * (position:sticky) so they remain visible while scrolling a wide/tall table.
+   * The Spreadsheet root element must be placed inside a scroll container
+   * (overflow:auto / scroll) for this to take effect.
+   * @defaultValue `false`
+   */
+  stickyHeaders?: boolean;
+  /**
+   * Override the text color used for read-only cells.
+   * Accepts any valid CSS color string (e.g. `"#000"`, `"rgba(0,0,0,0.87)"`).
+   * By default read-only cells are rendered with reduced opacity to signal
+   * they cannot be edited; pass a solid color here when the cell content is
+   * data that must be read clearly (e.g. query results).
+   */
+  readOnlyTextColor?: string;
+  /**
    * Function used to create the formula parser (instance of
    * "fast-formula-parser") used by the Spreadsheet by getting the spreadsheet's
    * data.
@@ -156,6 +172,8 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
   const {
     className,
     darkMode,
+    stickyHeaders,
+    readOnlyTextColor,
     columnLabels,
     rowLabels,
     hideColumnIndicators,
@@ -492,7 +510,7 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
 
   const tableNode = React.useMemo(
     () => (
-      <Table columns={size.columns} hideColumnIndicators={hideColumnIndicators} rowIndicatorWidth={rowIndicatorWidth}>
+      <Table columns={size.columns} hideColumnIndicators={hideColumnIndicators} rowIndicatorWidth={rowIndicatorWidth} columnIndicatorWidth={columnIndicatorWidth} stickyHeaders={stickyHeaders}>
         <HeaderRow>
           {!hideRowIndicators && !hideColumnIndicators && <CornerIndicator />}
           {!hideColumnIndicators &&
@@ -572,10 +590,14 @@ const Spreadsheet = <SpreadsheetRef, CellType extends Types.CellBase>(
         ref={rootRef}
         className={classNames("Spreadsheet", className, {
           "Spreadsheet--dark-mode": darkMode,
+          "Spreadsheet--sticky-headers": stickyHeaders,
         })}
         style={{
           "--row-indicator-width": rowIndicatorWidth,
           "--column-indicator-width": columnIndicatorWidth,
+          ...(readOnlyTextColor
+            ? { "--readonly-text-color": readOnlyTextColor }
+            : {}),
         } as React.CSSProperties}
         onKeyPress={onKeyPress}
         onKeyDown={handleKeyDown}
