@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 const REGISTRY_URL = 'https://raw.githubusercontent.com/guinanlin/react-spreadsheet-new/dty/packages/components/registry.json';
 const COMPONENT_BASE_URL = 'https://raw.githubusercontent.com/guinanlin/react-spreadsheet-new/dty/packages/components';
 
-interface Registry {
+export interface Registry {
   components: {
     [key: string]: {
       name: string;
