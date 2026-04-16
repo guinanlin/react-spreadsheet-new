@@ -1,229 +1,276 @@
-import React, { useMemo, useState } from "react";
-import type {
-  DtyPrintDesignerProps,
-  PageSetup,
-  PaperSize,
-  PrintOrientation,
-} from "../types";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
+import { createDefaultTemplate } from "../schema/defaults";
+import type { PrintTemplateDefinition } from "../schema/types";
+import {
+  reducer,
+  type DesignerAction,
+  type DesignerState,
+  type ToolId,
+} from "../state/reducer";
+import type { DataField, DtyPrintDesignerProps } from "../types";
+import { PrintDesignerToolbar } from "./PrintDesignerToolbar";
+import { PrintDesignerCanvas } from "./PrintDesignerCanvas";
+import { PrintDesignerInspector } from "./PrintDesignerInspector";
+import { TemplateGallery } from "./TemplateGallery";
+import type { BuiltinTemplate } from "../templates/registry";
 
-const PAPER_DIMENSIONS: Record<PaperSize, { width: number; height: number }> = {
-  A4: { width: 210, height: 297 },
-  A5: { width: 148, height: 210 },
-  Letter: { width: 216, height: 279 },
-};
-
-const DEFAULT_PAGE_SETUP: PageSetup = {
-  paperSize: "A4",
-  orientation: "portrait",
-  marginTop: 10,
-  marginRight: 10,
-  marginBottom: 10,
-  marginLeft: 10,
+const TOOL_SHORTCUTS: Record<string, ToolId> = {
+  v: "pointer",
+  t: "static_text",
+  d: "dynamic_text",
+  r: "rectangle",
+  i: "image",
 };
 
 /**
- * DtyPrintDesigner - 轻量级打印模板设计器
+ * DtyPrintDesigner - 打印模板「定义层」设计器。
+ *
+ * 本组件只产出 `PrintTemplateDefinition`（布局 + 样式 + 字段绑定）；
+ * 不内置打印 / PDF 导出。最终 PDF 由外部 `PDFKit` 适配层消费
+ * `mergeTemplateWithData(definition, record)` 的结果。
+ *
+ * @example
+ * ```tsx
+ * <DtyPrintDesigner
+ *   defaultValue={createDefaultTemplate()}
+ *   fields={fields}
+ *   sampleRecord={sample}
+ *   onSave={(def) => console.log(JSON.stringify(def, null, 2))}
+ * />
+ * ```
  */
 export function DtyPrintDesigner({
-  title: controlledTitle,
-  content: controlledContent,
-  pageSetup,
+  value,
+  defaultValue,
+  onChange,
+  onSave,
+  dataSources,
+  activeDataSourceId,
+  onDataSourceChange,
+  fields: controlledFields,
+  onRequestFields,
+  sampleRecord,
+  readOnly,
   showGrid = true,
-  readOnly = false,
-  debug = false,
+  zoom = 1,
+  debug,
+  showTemplateGallery = true,
+  extraTemplates,
+  onTemplateImported,
   className,
-  onTitleChange,
-  onContentChange,
-  onPageSetupChange,
-  ...props
+  style,
+  ...rest
 }: DtyPrintDesignerProps) {
-  const [uncontrolledTitle, setUncontrolledTitle] = useState("新建打印模板");
-  const [uncontrolledContent, setUncontrolledContent] = useState(
-    "在这里输入打印模板内容..."
+  const initial: DesignerState = useMemo(() => {
+    const seed =
+      value ?? defaultValue ?? createDefaultTemplate("New Print Template");
+    return {
+      template: seed,
+      activeTool: "pointer",
+      selectedId: null,
+    };
+  }, []);
+
+  const [state, dispatch] = useReducer(reducer, initial);
+  const isFirst = useRef(true);
+  const lastEmitted = useRef<PrintTemplateDefinition | null>(null);
+
+  useEffect(() => {
+    if (!value) return;
+    if (value !== state.template) {
+      dispatch({ type: "SET_TEMPLATE", template: value });
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      lastEmitted.current = state.template;
+      return;
+    }
+    if (lastEmitted.current === state.template) return;
+    lastEmitted.current = state.template;
+    onChange?.(state.template);
+  }, [state.template, onChange]);
+
+  // Async fetch fields when data source changes.
+  const [asyncFields, setAsyncFields] = useState<DataField[] | undefined>(
+    undefined
   );
-  const [internalSetup, setInternalSetup] =
-    useState<PageSetup>(DEFAULT_PAGE_SETUP);
+  useEffect(() => {
+    if (controlledFields || !onRequestFields || !activeDataSourceId) {
+      setAsyncFields(undefined);
+      return;
+    }
+    let cancelled = false;
+    Promise.resolve(onRequestFields(activeDataSourceId))
+      .then((result) => {
+        if (!cancelled) setAsyncFields(result);
+      })
+      .catch(() => {
+        if (!cancelled) setAsyncFields(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDataSourceId, controlledFields, onRequestFields]);
 
-  const mergedSetup = useMemo<PageSetup>(() => {
-    return { ...internalSetup, ...pageSetup };
-  }, [internalSetup, pageSetup]);
+  // Priority: external controlled > async fetched > template-internal definition
+  const fields =
+    controlledFields ??
+    asyncFields ??
+    state.template.dataSource?.fields;
 
-  const title = controlledTitle ?? uncontrolledTitle;
-  const content = controlledContent ?? uncontrolledContent;
-  const paper = PAPER_DIMENSIONS[mergedSetup.paperSize];
-  const displayWidth =
-    mergedSetup.orientation === "portrait" ? paper.width : paper.height;
-  const displayHeight =
-    mergedSetup.orientation === "portrait" ? paper.height : paper.width;
+  // Priority: external sampleRecord > template-internal sampleData
+  const effectiveSampleRecord =
+    sampleRecord ??
+    (state.template.dataSource?.sampleData as Record<string, unknown> | undefined);
+
+  // Keyboard shortcuts.
+  useEffect(() => {
+    if (readOnly) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (isInTextInput(e.target)) return;
+      const k = e.key.toLowerCase();
+      if (k === "delete" || k === "backspace") {
+        if (state.selectedId) {
+          e.preventDefault();
+          dispatch({ type: "REMOVE_ELEMENT", id: state.selectedId });
+        }
+        return;
+      }
+      if (k === "escape") {
+        dispatch({ type: "SELECT", id: null });
+        dispatch({ type: "SET_TOOL", tool: "pointer" });
+        return;
+      }
+      const tool = TOOL_SHORTCUTS[k];
+      if (tool) {
+        e.preventDefault();
+        dispatch({ type: "SET_TOOL", tool });
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [readOnly, state.selectedId]);
+
+  const selected = useMemo(
+    () =>
+      state.template.elements.find((el) => el.id === state.selectedId) ?? null,
+    [state.template.elements, state.selectedId]
+  );
+
+  const handleSave = useCallback(() => {
+    onSave?.(state.template);
+  }, [onSave, state.template]);
+
+  const handleToolChange = useCallback(
+    (tool: ToolId) => dispatch({ type: "SET_TOOL", tool }),
+    []
+  );
+
+  // ── Template Gallery ───────────────────────────────────────────────────────
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
+  const handleTemplateSelect = useCallback(
+    (definition: PrintTemplateDefinition, tpl: BuiltinTemplate) => {
+      dispatch({ type: "SET_TEMPLATE", template: definition });
+      dispatch({ type: "SELECT", id: null });
+      dispatch({ type: "SET_TOOL", tool: "pointer" });
+      onTemplateImported?.(tpl, definition);
+    },
+    [onTemplateImported]
+  );
+
+  const hasContent = state.template.elements.length > 0;
 
   if (debug) {
     // eslint-disable-next-line no-console
-    console.log("[DtyPrintDesigner] render", { title, mergedSetup, showGrid });
+    console.log("[DtyPrintDesigner] render", {
+      tool: state.activeTool,
+      selectedId: state.selectedId,
+      elements: state.template.elements.length,
+    });
   }
 
-  const updateSetup = (
-    key: keyof PageSetup,
-    value: PageSetup[keyof PageSetup]
-  ) => {
-    const next = { ...mergedSetup, [key]: value };
-    setInternalSetup(next);
-    onPageSetupChange?.(next);
-  };
-
-  const handleTitleChange = (next: string) => {
-    if (controlledTitle === undefined) {
-      setUncontrolledTitle(next);
-    }
-    onTitleChange?.(next);
-  };
-
-  const handleContentChange = (next: string) => {
-    if (controlledContent === undefined) {
-      setUncontrolledContent(next);
-    }
-    onContentChange?.(next);
-  };
-
   return (
-    <div
-      className={["dty-print-designer", className].filter(Boolean).join(" ")}
-      {...props}
-    >
+    <>
       <div
+        className={["dty-print-designer", className].filter(Boolean).join(" ")}
         style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(240px, 300px) 1fr",
-          gap: 16,
-          alignItems: "start",
+          display: "flex",
+          width: "100%",
+          height: "100%",
+          minHeight: 560,
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 8,
+          overflow: "hidden",
+          ...style,
         }}
+        {...rest}
       >
-        <section
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            padding: 12,
-            display: "grid",
-            gap: 10,
-            background: "#fff",
-          }}
-        >
-          <strong>打印参数</strong>
-
-          <label style={{ display: "grid", gap: 4 }}>
-            <span>模板名称</span>
-            <input
-              value={title}
-              disabled={readOnly}
-              onChange={(e) => handleTitleChange(e.target.value)}
-            />
-          </label>
-
-          <label style={{ display: "grid", gap: 4 }}>
-            <span>纸张尺寸</span>
-            <select
-              value={mergedSetup.paperSize}
-              disabled={readOnly}
-              onChange={(e) =>
-                updateSetup("paperSize", e.target.value as PaperSize)
-              }
-            >
-              <option value="A4">A4</option>
-              <option value="A5">A5</option>
-              <option value="Letter">Letter</option>
-            </select>
-          </label>
-
-          <label style={{ display: "grid", gap: 4 }}>
-            <span>方向</span>
-            <select
-              value={mergedSetup.orientation}
-              disabled={readOnly}
-              onChange={(e) =>
-                updateSetup("orientation", e.target.value as PrintOrientation)
-              }
-            >
-              <option value="portrait">纵向</option>
-              <option value="landscape">横向</option>
-            </select>
-          </label>
-
-          <div style={{ display: "grid", gap: 8 }}>
-            <span>页边距(mm)</span>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {(
-                [
-                  ["marginTop", "上"],
-                  ["marginRight", "右"],
-                  ["marginBottom", "下"],
-                  ["marginLeft", "左"],
-                ] as Array<[keyof PageSetup, string]>
-              ).map(([key, label]) => (
-                <label key={key} style={{ display: "grid", gap: 4 }}>
-                  <span>{label}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={mergedSetup[key]}
-                    disabled={readOnly}
-                    onChange={(e) => updateSetup(key, Number(e.target.value))}
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={showGrid}
-              readOnly
-              aria-label="是否显示网格线"
-            />
-            <span>网格显示由 `showGrid` 属性控制</span>
-          </label>
-        </section>
-
-        <section
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            padding: 16,
-            background: "#f8fafc",
-          }}
-        >
-          <div
-            style={{
-              margin: "0 auto",
-              width: Math.round(displayWidth * 2),
-              minHeight: Math.round(displayHeight * 2),
-              border: "1px solid #d1d5db",
-              backgroundColor: "#fff",
-              backgroundImage: showGrid
-                ? "linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(90deg, #f1f5f9 1px, transparent 1px)"
-                : "none",
-              backgroundSize: "20px 20px",
-              boxSizing: "border-box",
-              padding: `${mergedSetup.marginTop * 2}px ${mergedSetup.marginRight * 2}px ${mergedSetup.marginBottom * 2}px ${mergedSetup.marginLeft * 2}px`,
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>{title}</h3>
-            <textarea
-              style={{
-                width: "100%",
-                minHeight: 200,
-                border: "1px dashed #cbd5e1",
-                padding: 8,
-                resize: "vertical",
-                boxSizing: "border-box",
-                background: "transparent",
-              }}
-              disabled={readOnly}
-              value={content}
-              onChange={(e) => handleContentChange(e.target.value)}
-            />
-          </div>
-        </section>
+        <PrintDesignerToolbar
+          activeTool={state.activeTool}
+          onToolChange={handleToolChange}
+          readOnly={readOnly}
+          onImportTemplate={
+            showTemplateGallery && !readOnly
+              ? () => setGalleryOpen(true)
+              : undefined
+          }
+        />
+        <PrintDesignerCanvas
+          definition={state.template}
+          activeTool={state.activeTool}
+          selectedId={state.selectedId}
+          sampleRecord={effectiveSampleRecord}
+          readOnly={readOnly}
+          showGrid={showGrid}
+          zoom={zoom}
+          dispatch={dispatch as React.Dispatch<DesignerAction>}
+        />
+        <PrintDesignerInspector
+          definition={state.template}
+          selected={selected}
+          dataSources={dataSources}
+          activeDataSourceId={activeDataSourceId}
+          onDataSourceChange={onDataSourceChange}
+          fields={fields}
+          readOnly={readOnly}
+          onSave={handleSave}
+          dispatch={dispatch as React.Dispatch<DesignerAction>}
+        />
       </div>
-    </div>
+
+      {showTemplateGallery && !readOnly && (
+        <TemplateGallery
+          open={galleryOpen}
+          onClose={() => setGalleryOpen(false)}
+          onSelect={handleTemplateSelect}
+          hasContent={hasContent}
+          extraTemplates={extraTemplates}
+        />
+      )}
+    </>
+  );
+}
+
+function isInTextInput(target: EventTarget | null): boolean {
+  if (!target) return false;
+  const t = target as HTMLElement;
+  const tag = t.tagName?.toLowerCase();
+  return (
+    tag === "input" ||
+    tag === "textarea" ||
+    tag === "select" ||
+    t.isContentEditable === true
   );
 }
