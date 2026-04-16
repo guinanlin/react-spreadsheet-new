@@ -37,15 +37,22 @@ export async function add(components: string[], options: AddOptions) {
     
     try {
       const registry = await fetchRegistry();
-      spinner.succeed('可用组件：');
+      const total = Object.keys(registry.components).length;
+      spinner.succeed(`可用组件（共 ${total} 个）`);
 
       console.log('');
-      Object.values(registry.components).forEach((component: any) => {
-        console.log(chalk.cyan(`  ${component.name}`) + chalk.dim(` - ${component.description}`));
-      });
+      Object.keys(registry.components)
+        .sort((a, b) => a.localeCompare(b))
+        .forEach((key) => {
+          const component = registry.components[key];
+          console.log(
+            chalk.cyan(`  ${component.name}`) + chalk.dim(` - ${component.description}`)
+          );
+        });
       console.log('');
       console.log(chalk.dim('使用方法:'));
       console.log(chalk.dim('  npx @goodhawk/react-spreadsheet-cli add <component-name>'));
+      console.log(chalk.dim('  npx @goodhawk/react-spreadsheet-cli list'));
       console.log('');
       
       return;
@@ -73,7 +80,9 @@ export async function add(components: string[], options: AddOptions) {
       console.error(
         chalk.red(`\n错误: 组件不存在: ${invalidComponents.join(', ')}`)
       );
-      console.log(chalk.dim('\n运行 `npx @goodhawk/react-spreadsheet-cli add` 查看可用组件'));
+      console.log(
+        chalk.dim('\n运行 `npx @goodhawk/react-spreadsheet-cli list` 查看可用组件')
+      );
       process.exit(1);
     }
 

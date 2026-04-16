@@ -14,7 +14,9 @@
   "module": "dist/es/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "storybook dev -p 6006",
+    "dev": "pnpm exec storybook dev -p 6006 --host 0.0.0.0",
+    "dev:playground": "vite --config playground/vite.config.ts",
+    "dev:storybook:focus": "cross-env STORYBOOK_STORIES=focus pnpm exec storybook dev -p 6006 --host 0.0.0.0",
     "lint-typescript": "eslint .",
     "lint-css": "stylelint '*/**.css'",
     "lint": "run-s lint-typescript lint-css",
@@ -28,8 +30,9 @@
     "check-typing": "tsc",
     "build-typedoc": "typedoc",
     "ci": "run-s check-format check-typing lint test:coverage",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "pnpm exec storybook dev -p 6006 --host 0.0.0.0",
+    "build-storybook": "pnpm exec storybook build",
+    "chromatic": "pnpm exec chromatic"
   },
   "peerDependencies": {
     "react": ">=16.8.0 <20.0.0",
@@ -109,14 +112,11 @@
     "@babel/preset-env": "^7.21.4",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.21.4",
-    "@chromatic-com/storybook": "^3.2.6",
-    "@storybook/addon-essentials": "^8.6.11",
-    "@storybook/addon-interactions": "^8.6.11",
-    "@storybook/addon-links": "^8.6.11",
-    "@storybook/blocks": "^8.6.11",
-    "@storybook/react": "^8.6.11",
-    "@storybook/react-vite": "^8.6.14",
-    "@storybook/test": "^8.6.11",
+    "@storybook/addon-docs": "^10.3.0",
+    "@storybook/addon-links": "^10.3.0",
+    "@storybook/addon-mcp": "^0.6.0",
+    "@storybook/react": "^10.3.0",
+    "@storybook/react-vite": "^10.3.0",
     "@tailwindcss/postcss": "^4.1.14",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^16.1.0",
@@ -133,6 +133,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.21",
     "babel-eslint": "^10.0.0",
+    "chromatic": "^16.3.0",
     "cross-env": "^5.1.4",
     "eslint": "^7.19.0",
     "eslint-config-react-app": "^6.0.0",
@@ -158,7 +159,7 @@
     "rollup-plugin-postcss": "^4.0.1",
     "rollup-plugin-typescript2": "^0.35.0",
     "scheduler": "^0.20.0",
-    "storybook": "^8.6.11",
+    "storybook": "^10.3.0",
     "stylelint": "^16.12.0",
     "stylelint-config-standard": "36.0.1",
     "tailwindcss": "^4.1.14",
@@ -167,7 +168,7 @@
     "typedoc": "^0.23.28",
     "typedoc-plugin-rename-defaults": "^0.6.4",
     "typescript": "4.9.5",
-    "vite": "^4.5.14",
+    "vite": "^5.4.14",
     "webpack": "^5.97.1"
   },
   "jest": {
@@ -186,6 +187,13 @@
       "^react-dnd$": "<rootDir>/src/__mocks__/react-dnd.ts",
       "^react-dnd-html5-backend$": "<rootDir>/src/__mocks__/react-dnd-html5-backend.ts"
     }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide",
+      "core-js"
+    ]
   },
   "resolutions": {
     "wrap-ansi": "7.0.0",

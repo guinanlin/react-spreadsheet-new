@@ -51,6 +51,43 @@ pnpm build
 
 开发服务器将在 http://localhost:6006 启动 Storybook。
 
+### Storybook MCP 能力
+
+本项目已启用 Storybook MCP，可让支持 MCP 的 Client（如 Cursor 等）读取组件文档上下文并辅助生成/调用组件代码。
+
+**本机启动：**
+
+```bash
+pnpm storybook
+```
+
+**本机验证 MCP 端点：**
+
+```bash
+curl -I http://localhost:6006/mcp
+```
+
+如果返回非 404，并带有 `allow: GET, POST, DELETE, OPTIONS`，说明 MCP 端点可用。
+
+**其他机器连接这台机器（IP: 10.253.32.50）：**
+
+- MCP 地址：`http://10.253.32.50:6006/mcp`
+- 前提：本机 Storybook 正在运行，且网络/防火墙允许访问 6006 端口
+
+Cursor 客户端可在其他机器执行：
+
+```bash
+npx mcp-add \
+  --name storybook-lan \
+  --type http \
+  --url "http://10.253.32.50:6006/mcp" \
+  --client-id "cdf3737dff9d485485968e50b63fd8b4" \
+  --scope project \
+  --clients cursor
+```
+
+完整说明见 [STORYBOOK_MCP.md](STORYBOOK_MCP.md)。
+
 ### 后端开发 (Backend Development)
 
 后端使用 FastAPI 提供透视表功能，基于 DuckDB 进行高性能服务端计算。

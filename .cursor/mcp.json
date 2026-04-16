@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "storybook-local": {
+      "url": "http://localhost:6006/mcp",
+      "auth": {
+        "CLIENT_ID": "cdf3737dff9d485485968e50b63fd8b4"
+      }
+    }
+  }
+}

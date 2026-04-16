@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import '@/styles/globals.css';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,11 @@ import CustomCell from "./CustomCell";
 import { RangeEdit, RangeView } from "./RangeDataComponents";
 import { SelectEdit, SelectView } from "./SelectDataComponents";
 import { CustomCornerIndicator } from "./CustomCornerIndicator";
+import {
+  buildVoucherQueryMatrix,
+  VOUCHER_QUERY_COLUMN_LABELS,
+  type VoucherStringCell,
+} from "./voucherQueryFixture";
 type StringCell = CellBase<string | undefined>;
 type NumberCell = CellBase<number | undefined>;
 
@@ -172,6 +177,259 @@ export const Basic: StoryObj = {
       rowIndicatorWidth: "30px",
       columnIndicatorWidth: "50px",
   },
+};
+
+/** 凭证查询示例行数（可改为 200+ 以验证纵向滚动与性能） */
+const VOUCHER_QUERY_STORY_ROW_COUNT = 100;
+
+// ─── 排序相关 ────────────────────────────────────────────────────────────────
+
+type SortDirection = "asc" | "desc" | null;
+type VoucherSortState = { column: number | null; direction: SortDirection };
+
+const VoucherSortCtx = React.createContext<{
+  sort: VoucherSortState;
+  onSort: (col: number) => void;
+} | null>(null);
+
+/** 双三角排序图标 */
+const SortTriangle: React.FC<{ active: boolean; direction: SortDirection }> = ({
+  active,
+  direction,
+}) => {
+  const upFill =
+    active && direction === "asc" ? "hsl(213 90% 54%)" : "hsl(215 16% 60%)";
+  const downFill =
+    active && direction === "desc" ? "hsl(213 90% 54%)" : "hsl(215 16% 60%)";
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 1,
+        marginLeft: 4,
+        opacity: active ? 1 : 0.5,
+        flexShrink: 0,
+      }}
+    >
+      <svg width="7" height="4" viewBox="0 0 7 4" style={{ display: "block" }}>
+        <path d="M3.5 0L7 4H0z" fill={upFill} />
+      </svg>
+      <svg width="7" height="4" viewBox="0 0 7 4" style={{ display: "block" }}>
+        <path d="M3.5 4L7 0H0z" fill={downFill} />
+      </svg>
+    </span>
+  );
+};
+
+/**
+ * 凭证查询专用列标题组件：在默认 ColumnIndicator 的基础上叠加排序图标和点击排序行为。
+ * 复用 DefaultColumnIndicator 内置的列拖拽调宽功能，只覆盖 onSelect → onSort。
+ */
+const VoucherColumnIndicator: Types.ColumnIndicatorComponent = ({
+  column,
+  label,
+  selected,
+  onSelect,
+}) => {
+  const ctx = React.useContext(VoucherSortCtx);
+  const isActive = ctx != null && ctx.sort.column === column;
+  const direction: SortDirection = isActive ? ctx!.sort.direction : null;
+
+  const handleSelect = React.useCallback(
+    (col: number, _extend: boolean) => {
+      ctx?.onSort(col);
+    },
+    [ctx]
+  );
+
+  const labelWithIcon = (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        maxWidth: "100%",
+        overflow: "hidden",
+      }}
+    >
+      <span
+        style={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+      </span>
+      <SortTriangle active={isActive} direction={direction} />
+    </span>
+  );
+
+  return (
+    <DefaultColumnIndicator
+      column={column}
+      label={labelWithIcon}
+      selected={selected}
+      onSelect={handleSelect}
+    />
+  );
+};
+
+// ─── 排序逻辑 ─────────────────────────────────────────────────────────────────
+
+function sortMatrix(
+  rows: VoucherStringCell[][],
+  column: number,
+  direction: "asc" | "desc"
+): VoucherStringCell[][] {
+  const dir = direction === "asc" ? 1 : -1;
+  return [...rows].sort((rowA, rowB) => {
+    const a = rowA[column]?.value ?? "";
+    const b = rowB[column]?.value ?? "";
+    // 优先尝试数值比较（去掉千位分隔符）
+    const na = Number(a.replace(/,/g, ""));
+    const nb = Number(b.replace(/,/g, ""));
+    if (a !== "" && b !== "" && !isNaN(na) && !isNaN(nb)) {
+      return (na - nb) * dir;
+    }
+    return a.localeCompare(b, "zh-CN") * dir;
+  });
+}
+
+// ─── Story 主组件 ─────────────────────────────────────────────────────────────
+
+const VoucherQueryStory: React.FC<Props<StringCell>> = (args) => {
+  const baseData = React.useMemo(
+    () => buildVoucherQueryMatrix(VOUCHER_QUERY_STORY_ROW_COUNT),
+    []
+  );
+  const columnLabels = React.useMemo(
+    () => Array.from(VOUCHER_QUERY_COLUMN_LABELS),
+    []
+  );
+
+  const [sort, setSort] = React.useState<VoucherSortState>({
+    column: null,
+    direction: null,
+  });
+
+  const onSort = React.useCallback((col: number) => {
+    setSort((prev) => {
+      if (prev.column !== col) return { column: col, direction: "asc" };
+      if (prev.direction === "asc") return { column: col, direction: "desc" };
+      return { column: null, direction: null };
+    });
+  }, []);
+
+  const data = React.useMemo<VoucherStringCell[][]>(() => {
+    if (sort.column === null || sort.direction === null) return baseData;
+    return sortMatrix(baseData, sort.column, sort.direction);
+  }, [baseData, sort]);
+
+  const sortCtxValue = React.useMemo(() => ({ sort, onSort }), [sort, onSort]);
+
+  const sortLabel = sort.column !== null
+    ? `按「${columnLabels[sort.column]}」${sort.direction === "asc" ? "升序" : "降序"}排列`
+    : "点击列标题排序";
+
+  return (
+    <VoucherSortCtx.Provider value={sortCtxValue}>
+      {/*
+       * 外层只做尺寸+布局，不设置 overflow:auto，避免产生额外的 scroll context，
+       * 确保内层滚动容器是 sticky 唯一的 scroll ancestor。
+       */}
+      <div
+        style={{
+          boxSizing: "border-box",
+          width: "100%",
+          maxWidth: "100%",
+          height: "min(92vh, 900px)",
+          padding: "12px 16px 0",
+          background: "hsl(210 40% 98%)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        {/* 工具栏：提示 + 排序状态 */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flexShrink: 0,
+          }}
+        >
+          <p style={{ margin: 0, fontSize: 13, color: "hsl(215 16% 35%)" }}>
+            凭证查询宽表：共{" "}
+            <strong>{VOUCHER_QUERY_STORY_ROW_COUNT}</strong> 行 ×{" "}
+            <strong>{VOUCHER_QUERY_COLUMN_LABELS.length}</strong>{" "}
+            列。列头与行号均已冻结，可横向和纵向滚动。
+          </p>
+          <span
+            style={{
+              marginLeft: "auto",
+              fontSize: 12,
+              color:
+                sort.column !== null
+                  ? "hsl(213 90% 45%)"
+                  : "hsl(215 16% 55%)",
+              whiteSpace: "nowrap",
+              cursor: sort.column !== null ? "pointer" : "default",
+              padding: "2px 8px",
+              borderRadius: 4,
+              border: "1px solid",
+              borderColor:
+                sort.column !== null
+                  ? "hsl(213 90% 70%)"
+                  : "hsl(215 16% 80%)",
+              background:
+                sort.column !== null
+                  ? "hsl(213 90% 96%)"
+                  : "transparent",
+            }}
+            onClick={() => sort.column !== null && setSort({ column: null, direction: null })}
+            title={sort.column !== null ? "点击清除排序" : undefined}
+          >
+            {sortLabel}
+            {sort.column !== null && " ✕"}
+          </span>
+        </div>
+        {/* 内层滚动容器 */}
+        <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+          <Spreadsheet
+            {...args}
+            data={data as StringCell[][]}
+            columnLabels={columnLabels}
+            stickyHeaders
+            readOnlyTextColor="rgb(15 20 30)"
+            ColumnIndicator={VoucherColumnIndicator}
+          />
+        </div>
+      </div>
+    </VoucherSortCtx.Provider>
+  );
+};
+
+export const VoucherQuery: StoryObj<Props<StringCell>> = {
+  name: "凭证查询（宽表）",
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        story:
+          "展示总账「凭证查询」类导出：极多分析维度列与多行分录。数据来源于提供的凭证导出 CSV（GB18030 编码）中前两行样例，在 Story 中扩展为 100 行并统一为更正式的列标题；布局上与 Basic 相同，均使用 Spreadsheet 本体。若需压测更接近真实分页上限，可将源码中 `VOUCHER_QUERY_STORY_ROW_COUNT` 调整为 200 或更大。",
+      },
+    },
+  },
+  args: {
+    ...meta.args,
+    rowIndicatorWidth: "44px",
+    columnIndicatorWidth: "152px",
+  },
+  render: (args) => <VoucherQueryStory {...args} />,
 };
 
 export const DarkMode: StoryObj = {
@@ -880,69 +1138,134 @@ export const WithCornerIndicator: StoryObj = {
   },
 };
 
+// ─── Filter Story 初始数据（100 行员工信息，4 列）────────────────────────────
+
+const FILTER_COLUMN_LABELS = ["姓名", "部门", "职位", "所在城市"];
+
+const _NAMES = [
+  "张伟","王芳","李强","刘洋","陈静","杨帆","赵雷","黄丽","周涛","吴娜",
+  "徐明","孙超","马丽","朱敏","胡刚","郭晶","林峰","何俊","高燕","罗斌",
+  "郑晓","唐磊","梁欣","谢宇","宋婷","韩冰","许亮","冯露","邓浩","曹旭",
+  "彭菲","曾晨","肖颖","段鹏","江涛","史琳","薛刚","侯娟","蒋磊","卢菊",
+  "萧恒","潘伟","邵明","孟琼","毛浩","贺静","龚宇","钱敏","严博","秦艳",
+];
+const _DEPTS = ["研发部","市场部","财务部","人力资源部","销售部","运营部","产品部","客服部"];
+const _TITLES = [
+  "高级工程师","产品经理","销售代表","财务分析师","人事专员",
+  "运营专员","UI设计师","数据分析师","客服主管","技术总监",
+];
+const _CITIES = [
+  "北京","上海","深圳","广州","杭州","成都","武汉","南京","西安","苏州",
+  "重庆","天津","长沙","郑州","青岛",
+];
+
+const FILTER_INITIAL_DATA: Matrix.Matrix<StringCell> = Array.from(
+  { length: 100 },
+  (_, i) => [
+    { value: _NAMES[i % _NAMES.length] },
+    { value: _DEPTS[i % _DEPTS.length] },
+    { value: _TITLES[(i * 3) % _TITLES.length] },
+    { value: _CITIES[(i * 7) % _CITIES.length] },
+  ]
+);
+
 /**
  * 过滤功能示例
- * 
- * 展示如何结合外部过滤器对表格数据进行筛选，保留符合条件的单元格。
+ *
+ * 展示如何结合外部过滤器对 100 行员工数据进行筛选。
+ * 在搜索框中输入关键词（如姓名、部门、城市），表格将只保留含有该关键词的单元格。
  */
 export const Filter: StoryFn<Props<StringCell>> = (props) => {
-  const [data, setData] = React.useState(
-    EMPTY_DATA as Matrix.Matrix<StringCell>
+  const [data, setData] = React.useState<Matrix.Matrix<StringCell>>(
+    FILTER_INITIAL_DATA
   );
   const [filter, setFilter] = React.useState("");
+  const [matchCount, setMatchCount] = React.useState(0);
 
   const handleFilterChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const nextFilter = event.target.value;
-      setFilter(nextFilter);
+      setFilter(event.target.value);
     },
-    [setFilter]
+    []
   );
 
   /**
-   * Removes cells not matching the filter from matrix while maintaining the
-   * minimum size that includes all of the matching cells.
+   * 逐行过滤：保留任意单元格包含关键词的行（整行保留），
+   * 空关键词时显示全部数据。
    */
   const filtered = React.useMemo(() => {
-    if (filter.length === 0) {
+    const kw = filter.trim();
+    if (kw.length === 0) {
+      setMatchCount(data.length);
       return data;
     }
-    const filtered: Matrix.Matrix<StringCell> = [];
-    for (let row = 0; row < data.length; row++) {
-      if (data.length !== 0) {
-        for (let column = 0; column < data[0].length; column++) {
-          const cell = data[row][column];
-          if (cell && cell.value && cell.value.includes(filter)) {
-            if (!filtered[0]) {
-              filtered[0] = [];
-            }
-            if (filtered[0].length < column) {
-              filtered[0].length = column + 1;
-            }
-            if (!filtered[row]) {
-              filtered[row] = [];
-            }
-            filtered[row][column] = cell;
-          }
-        }
-      }
-    }
-    return filtered;
+    const result = data.filter((row) =>
+      row.some((cell) => cell?.value?.includes(kw))
+    );
+    setMatchCount(result.length);
+    return result;
   }, [data, filter]);
 
   return (
-    <>
-      <div className="mb-2">
+    <div style={{ padding: "16px 20px" }}>
+      {/* 搜索栏 */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
         <Input
           type="text"
-          placeholder="Filter"
+          placeholder="输入关键词过滤（姓名 / 部门 / 职位 / 城市）"
           value={filter}
           onChange={handleFilterChange}
-          className="max-w-xs"
+          style={{ maxWidth: 340 }}
+        />
+        <span style={{ fontSize: 13, color: "hsl(215 16% 45%)", whiteSpace: "nowrap" }}>
+          {filter.trim()
+            ? `共 ${matchCount} 行匹配`
+            : `共 ${data.length} 行`}
+        </span>
+        {filter && (
+          <button
+            onClick={() => setFilter("")}
+            style={{
+              fontSize: 12,
+              padding: "2px 10px",
+              borderRadius: 4,
+              border: "1px solid hsl(215 16% 75%)",
+              background: "white",
+              cursor: "pointer",
+              color: "hsl(215 16% 40%)",
+            }}
+          >
+            清除
+          </button>
+        )}
+      </div>
+      {/* 表格滚动容器：固定高度 + overflow:auto，配合 stickyHeaders 让列头始终可见 */}
+      <div
+        style={{
+          overflow: "auto",
+          maxHeight: "calc(100vh - 130px)",
+          border: "1px solid hsl(215 16% 88%)",
+          borderRadius: 6,
+        }}
+      >
+        <Spreadsheet
+          {...props}
+          data={filtered}
+          columnLabels={FILTER_COLUMN_LABELS}
+          onChange={setData}
+          columnIndicatorWidth="140px"
+          rowIndicatorWidth="44px"
+          stickyHeaders
         />
       </div>
-      <Spreadsheet {...props} data={filtered} onChange={setData} />
-    </>
+    </div>
   );
 };
 
