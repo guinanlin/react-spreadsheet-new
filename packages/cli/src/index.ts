@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { init } from './commands/init';
 import { add } from './commands/add';
+import { list } from './commands/list';
 
 const packageJson = require('../package.json');
 
@@ -26,6 +27,11 @@ program
   .option('-c, --cwd <path>', 'Working directory (default: current directory)')
   .option('-p, --path <path>', 'Custom installation path')
   .action(add);
+
+program
+  .command('list')
+  .description('List all available components from the registry')
+  .action(list);
 
 program.parse();
 

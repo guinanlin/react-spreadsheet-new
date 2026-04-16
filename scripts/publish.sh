@@ -224,13 +224,38 @@ success "成功发布到 npm!"
 echo ""
 cd ../..
 info "推送到远程仓库..."
-git push origin $(git branch --show-current) || {
+CURRENT_BRANCH=$(git branch --show-current)
+git push origin "$CURRENT_BRANCH" || {
     warning "推送代码失败"
 }
 git push origin "cli-v$NEW_VERSION" || {
     warning "推送标签失败"
 }
 success "代码和标签已推送"
+
+# 步骤 14：同步版本号和 registry 到 dty 分支
+echo ""
+info "同步版本号和 registry 到 dty 分支..."
+if git show-ref --quiet refs/heads/dty || git ls-remote --exit-code origin dty > /dev/null 2>&1; then
+    git checkout dty || {
+        warning "切换到 dty 分支失败，跳过同步"
+    }
+    if [ "$(git branch --show-current)" = "dty" ]; then
+        git pull origin dty || warning "拉取 dty 分支失败，继续..."
+        git checkout "$CURRENT_BRANCH" -- \
+            packages/cli/package.json \
+            packages/cli/package-lock.json \
+            packages/components/
+        git commit -m "chore: sync cli v$NEW_VERSION and components to dty" || {
+            warning "无需同步（dty 分支已是最新）"
+        }
+        git push origin dty || warning "推送 dty 分支失败"
+        success "已同步到 dty 分支"
+        git checkout "$CURRENT_BRANCH"
+    fi
+else
+    warning "dty 分支不存在，跳过同步"
+fi
 
 # 完成
 echo ""

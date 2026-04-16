@@ -31,29 +31,41 @@ export async function add(components: string[], options: AddOptions) {
     };
   }
 
-  // 如果没有指定组件，显示可用组件列表
+  // 如果没有指定组件，交互式选择
   if (!components || components.length === 0) {
     const spinner = ora('获取可用组件...').start();
-    
-    try {
-      const registry = await fetchRegistry();
-      spinner.succeed('可用组件：');
 
-      console.log('');
-      Object.values(registry.components).forEach((component: any) => {
-        console.log(chalk.cyan(`  ${component.name}`) + chalk.dim(` - ${component.description}`));
-      });
-      console.log('');
-      console.log(chalk.dim('使用方法:'));
-      console.log(chalk.dim('  npx @goodhawk/react-spreadsheet-cli add <component-name>'));
-      console.log('');
-      
-      return;
+    let registry: any;
+    try {
+      registry = await fetchRegistry();
+      spinner.stop();
     } catch (error) {
       spinner.fail('获取组件列表失败');
       console.error(chalk.red(error));
       process.exit(1);
     }
+
+    const componentList = Object.values(registry.components) as any[];
+
+    const { selected } = await prompts({
+      type: 'multiselect',
+      name: 'selected',
+      message: '选择要安装的组件（空格选择，回车确认）',
+      choices: componentList
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((c) => ({
+          title: chalk.cyan(c.name) + chalk.dim(` - ${c.description}`),
+          value: c.name,
+        })),
+      min: 1,
+    });
+
+    if (!selected || selected.length === 0) {
+      console.log(chalk.yellow('\n未选择任何组件，已退出。\n'));
+      return;
+    }
+
+    components = selected;
   }
 
   console.log(chalk.bold(`\n📦 安装组件: ${components.join(', ')}\n`));
@@ -131,12 +143,13 @@ async function installComponent(
   const spinner = ora(`安装 ${name}...`).start();
 
   try {
-    // 确定安装路径
-    const targetDir = path.join(
-      cwd,
-      options.path || config.components.path,
-      name
-    );
+    // 确定安装路径（--path 为绝对路径时直接使用，否则相对 cwd 拼接）
+    const installBase = options.path
+      ? path.isAbsolute(options.path)
+        ? options.path
+        : path.join(cwd, options.path)
+      : path.join(cwd, config.components.path);
+    const targetDir = path.join(installBase, name);
 
     // 检查是否已存在
     if (await fs.pathExists(targetDir)) {
