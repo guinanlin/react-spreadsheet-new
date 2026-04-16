@@ -335,15 +335,6 @@
         "lucide-react",
         "rxjs"
       ]
-    },
-    "dty-print-designer": {
-      "name": "dty-print-designer",
-      "description": "打印模板可视化设计器：三栏布局编辑元素与字段绑定，产出可序列化的 PrintTemplateDefinition（不含 PDF 生成）",
-      "type": "components:ui",
-      "files": [],
-      "dependencies": [
-        "lucide-react"
-      ]
     }
   }
 }

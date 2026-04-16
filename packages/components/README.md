@@ -65,18 +65,6 @@ npx @react-spreadsheet/cli add dty-mindmap
 **依赖:** lucide-react, rxjs
 
 
-### dty-print-designer
-
-打印模板可视化设计器：三栏布局编辑元素与字段绑定，产出可序列化的 PrintTemplateDefinition（不含 PDF 生成）
-
-```bash
-npx @react-spreadsheet/cli add dty-print-designer
-```
-
-**文件数量:** 0  
-**依赖:** lucide-react
-
-
 ## 开发说明
 
 ⚠️ **不要直接修改这个目录的文件！**
