@@ -470,6 +470,54 @@ const COMPONENTS = {
     },
     dependencies: ['lucide-react', 'rxjs'],
   },
+  'dty-print-designer': {
+    name: 'dty-print-designer',
+    description:
+      '打印模板可视化设计器：三栏布局编辑元素与字段绑定，产出可序列化的 PrintTemplateDefinition（不含 PDF 生成）',
+    basePath: 'dty-print-designer',
+    files: ['index.ts', 'types.ts', 'README.md'],
+    subdirs: {
+      components: [
+        'DtyPrintDesigner.tsx',
+        'PrintDesignerCanvas.tsx',
+        'PrintDesignerInspector.tsx',
+        'PrintDesignerToolbar.tsx',
+        'TemplateGallery.tsx',
+      ],
+      'components/elements': [
+        'BarcodeView.tsx',
+        'DynamicTextView.tsx',
+        'ImageView.tsx',
+        'index.ts',
+        'preview-style.ts',
+        'RectangleView.tsx',
+        'StaticTextView.tsx',
+        'TableView.tsx',
+      ],
+      lib: ['binding.ts', 'id.ts', 'index.ts', 'merge.ts', 'units.ts'],
+      schema: [
+        'constants.ts',
+        'defaults.ts',
+        'index.ts',
+        'migrate.ts',
+        'serialize.ts',
+        'types.ts',
+      ],
+      state: ['reducer.ts'],
+      templates: [
+        '_builder.ts',
+        'index.ts',
+        'journalEntry.ts',
+        'purchaseInvoice.ts',
+        'purchaseOrder.ts',
+        'registry.ts',
+        'salesInvoice.ts',
+        'salesOrder.ts',
+      ],
+      docs: ['pdfkit-integration.md'],
+    },
+    dependencies: ['lucide-react'],
+  },
 };
 
 async function syncTemplates() {
