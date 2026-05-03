@@ -202,7 +202,7 @@ export const MindMapNodeComponent = ({
                 onChange={(event) => onEditChange(node.id, event.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={() => onEditEnd(node.id, node.text)}
-                className="pointer-events-auto w-full flex-1 bg-transparent resize-none outline-none text-slate-800 dark:text-white border-0 m-0 overflow-hidden"
+                className="pointer-events-auto box-border min-h-0 max-h-full w-full flex-1 bg-transparent resize-none outline-none text-slate-800 dark:text-white border-0 m-0 overflow-hidden"
                 style={{ ...textStyle, margin: 0 }}
               />
             ) : (

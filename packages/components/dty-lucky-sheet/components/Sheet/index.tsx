@@ -81,6 +81,7 @@ const Sheet: React.FC<Props> = ({ sheet }) => {
     context.rowHeaderWidth,
     context.columnHeaderHeight,
     context.devicePixelRatio,
+    context.toolbarHeight,
   ]);
 
   /**

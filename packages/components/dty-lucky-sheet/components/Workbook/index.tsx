@@ -29,6 +29,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useImperativeHandle,
 } from "react";
@@ -327,6 +328,13 @@ const Workbook = React.forwardRef<WorkbookInstance, Settings & AdditionalProps>(
       },
       [emitOp]
     );
+
+    useLayoutEffect(() => {
+      if (mergedSettings.showToolbar) return;
+      setContextWithProduce((draftCtx) => {
+        draftCtx.toolbarHeight = 0;
+      });
+    }, [mergedSettings.showToolbar, setContextWithProduce]);
 
     const handleUndo = useCallback(() => {
       const history = globalCache.current.undoList.pop();

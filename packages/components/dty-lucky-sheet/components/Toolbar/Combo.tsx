@@ -1,12 +1,13 @@
 import React, {
   CSSProperties,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
   useContext,
 } from "react";
+import { createPortal } from "react-dom";
 import { locale } from "../../core";
-import { useOutsideClick } from "../../hooks/useOutsideClick";
 import SVGIcon from "../SVGIcon";
 import WorkbookContext from "../../context";
 
@@ -30,34 +31,100 @@ const Combo: React.FC<Props> = ({
   const { context } = useContext(WorkbookContext);
   const style: CSSProperties = { userSelect: "none" };
   const [open, setOpen] = useState(false);
-  const [popupPosition, setPopupPosition] = useState({ left: 0 });
+  const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
+  const containerRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const { info } = locale(context);
 
-  useOutsideClick(popupRef as React.RefObject<HTMLElement> as React.RefObject<HTMLElement> as React.RefObject<HTMLElement> as React.RefObject<HTMLElement>, () => {
-    setOpen(false);
-  });
-
+  /** 下拉挂到 body + fixed，避免专业工具栏 overflow 裁剪弹层 */
   useLayoutEffect(() => {
-    // re-position the popup menu if it overflows the window
-    if (!popupRef.current) {
+    if (!open) {
+      setPortalStyle({});
       return;
     }
-    if (!open) {
-      setPopupPosition({ left: 0 });
-    }
-    const winW = window.innerWidth;
-    const rect = popupRef.current.getBoundingClientRect();
-    const menuW = rect.width;
-    const { left } = rect;
-    if (left + menuW > winW) {
-      setPopupPosition({ left: -rect.width + buttonRef.current!.clientWidth });
-    }
+    let ro: ResizeObserver | null = null;
+    let rafId = 0;
+    const updatePosition = () => {
+      const btn = buttonRef.current;
+      const popup = popupRef.current;
+      if (!btn || !popup) return;
+      const br = btn.getBoundingClientRect();
+      const pw = popup.offsetWidth;
+      const ph = popup.offsetHeight;
+      let left = br.left;
+      let top = br.bottom + 2;
+      if (left + pw > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - pw - 8);
+      }
+      if (top + ph > window.innerHeight - 8 && br.top > ph + 8) {
+        top = br.top - ph - 2;
+      }
+      setPortalStyle({
+        position: "fixed",
+        left,
+        top,
+        zIndex: 10050,
+      });
+    };
+    let attempts = 0;
+    let cancelled = false;
+    const afterPortalPaint = () => {
+      if (cancelled) return;
+      updatePosition();
+      const popupEl = popupRef.current;
+      if (!popupEl && attempts < 24) {
+        attempts += 1;
+        rafId = requestAnimationFrame(afterPortalPaint);
+        return;
+      }
+      if (!popupEl) return;
+      ro = new ResizeObserver(updatePosition);
+      ro.observe(popupEl);
+      window.addEventListener("resize", updatePosition);
+      window.addEventListener("scroll", updatePosition, true);
+    };
+    rafId = requestAnimationFrame(afterPortalPaint);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      ro?.disconnect();
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    function handleMouseDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (containerRef.current?.contains(t)) return;
+      if (popupRef.current?.contains(t)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [open]);
+
+  const popupContent =
+    open &&
+    typeof document !== "undefined" &&
+    createPortal(
+      <div
+        ref={popupRef}
+        className="fortune-toolbar-combo-popup fortune-toolbar-combo-popup--portal"
+        style={portalStyle}
+      >
+        {children?.(setOpen)}
+      </div>,
+      document.body
+    );
+
   return (
-    <div className="fortune-toobar-combo-container fortune-toolbar-item">
+    <div
+      ref={containerRef}
+      className="fortune-toobar-combo-container fortune-toolbar-item"
+    >
       <div ref={buttonRef} className="fortune-toolbar-combo">
         <div
           className="fortune-toolbar-combo-button"
@@ -92,15 +159,7 @@ const Combo: React.FC<Props> = ({
         </div>
         {tooltip && <div className="fortune-tooltip">{tooltip}</div>}
       </div>
-      {open && (
-        <div
-          ref={popupRef}
-          className="fortune-toolbar-combo-popup"
-          style={popupPosition}
-        >
-          {children?.(setOpen)}
-        </div>
-      )}
+      {popupContent}
     </div>
   );
 };

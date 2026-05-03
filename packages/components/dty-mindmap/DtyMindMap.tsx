@@ -11,7 +11,7 @@ import {
 import { MAX_NODE_WIDTH, MIN_NODE_HEIGHT } from "./constants";
 import { MindMapStore } from "./mind-map-store";
 import { useMindMap } from "./use-mind-map";
-import type { MindMapNode, ViewportState } from "./types";
+import type { MindMapEdgeLinkMode, MindMapNode, ViewportState } from "./types";
 import { ThemeMode, THEMES } from "./types";
 import { Toolbar } from "./components/toolbar";
 import { MindMapEdge } from "./components/mind-map-edge";
@@ -21,6 +21,7 @@ import { Instructions } from "./components/instructions";
 import type { MindMapData } from "./types";
 import { DEFAULT_MIND_MAP_DATA } from "./constants";
 import { normalizeMindMapData } from "./data-helpers";
+import { computeLayout } from "./utils/layout";
 
 export interface DtyMindMapProps {
   /** 初始数据，不传则使用默认根节点 */
@@ -41,6 +42,11 @@ export interface DtyMindMapProps {
   height?: string | number;
   /** 容器宽度，数字为 px */
   width?: string | number;
+  /**
+   * 父子连线的绘制策略
+   * @default "curved-all"
+   */
+  edgeLinkMode?: MindMapEdgeLinkMode;
 }
 
 const buildViewport = (): ViewportState => {
@@ -77,7 +83,7 @@ const TOOLBAR_LABELS = {
 const CONTROL_LABELS = {
   zoomIn: "放大",
   zoomOut: "缩小",
-  reset: "适应画布",
+  reset: "重新排列并适应画布",
 };
 
 const INSTRUCTIONS_ITEMS = [
@@ -100,6 +106,7 @@ export function DtyMindMap({
   className = "",
   height = "100vh",
   width = "100%",
+  edgeLinkMode = "curved-all",
 }: DtyMindMapProps) {
   const normalizedInitial = useMemo(
     () => (initialData != null ? normalizeMindMapData(initialData) : DEFAULT_MIND_MAP_DATA),
@@ -331,14 +338,14 @@ export function DtyMindMap({
     };
   }, []);
 
-  const handleResetView = useCallback(() => {
+  const fitViewportToLayoutNodes = useCallback((layoutNodes: Record<string, MindMapNode>) => {
     hasManualViewChangeRef.current = false;
-    const allNodes = Object.values(nodes) as MindMapNode[];
+    const allNodes = Object.values(layoutNodes) as MindMapNode[];
     const visibleNodes = allNodes.filter((node) => {
       if (node.x === undefined || node.y === undefined) return false;
       let current = node;
       while (current.parentId) {
-        const parent = nodes[current.parentId];
+        const parent = layoutNodes[current.parentId];
         if (!parent || !parent.isExpanded) return false;
         current = parent;
       }
@@ -386,7 +393,14 @@ export function DtyMindMap({
     const newX = viewportWidth / 2 - centerX * fitScale;
     const newY = viewportHeight / 2 - centerY * fitScale;
     setViewport({ x: newX, y: newY, scale: fitScale });
-  }, [nodes]);
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    store.resetAutomaticLayout();
+    const snap = store.getCurrentState();
+    const layoutNodes = computeLayout(snap.history.present, snap.drafts);
+    fitViewportToLayoutNodes(layoutNodes);
+  }, [store, fitViewportToLayoutNodes]);
 
   useEffect(() => {
     if (hasManualViewChangeRef.current) {
@@ -397,8 +411,8 @@ export function DtyMindMap({
       (node) => node.x !== undefined && node.y !== undefined,
     );
     if (!hasPositions) return;
-    handleResetView();
-  }, [handleResetView, nodes]);
+    fitViewportToLayoutNodes(nodes);
+  }, [fitViewportToLayoutNodes, nodes]);
 
   const styles = THEMES[theme];
 
@@ -407,11 +421,19 @@ export function DtyMindMap({
       if (!node.parentId) return null;
       const parent = nodes[node.parentId];
       if (!parent || !parent.isExpanded) return null;
+      const siblingCount = parent.children.length;
       return (
-        <MindMapEdge key={`edge-${node.id}`} source={parent} target={node} theme={theme} />
+        <MindMapEdge
+          key={`edge-${node.id}`}
+          source={parent}
+          target={node}
+          theme={theme}
+          linkMode={edgeLinkMode}
+          siblingCount={siblingCount}
+        />
       );
     });
-  }, [nodes, theme]);
+  }, [nodes, theme, edgeLinkMode]);
 
   const renderNodes = useMemo(() => {
     return (Object.values(nodes) as MindMapNode[])

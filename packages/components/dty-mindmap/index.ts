@@ -24,6 +24,7 @@ export { computeLayout } from "./utils/layout";
 // 类型
 export type {
   MindMapData,
+  MindMapEdgeLinkMode,
   MindMapNode,
   NodeAttribute,
   NodeId,
