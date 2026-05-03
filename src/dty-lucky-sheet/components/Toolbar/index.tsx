@@ -3,6 +3,8 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -34,6 +36,7 @@ import {
   createFilter,
   clearFilter,
   applyLocation,
+  defaultProfessionalToolbarTabs,
 } from "../../core";
 import _ from "lodash";
 import WorkbookContext from "../../context";
@@ -62,6 +65,18 @@ const Toolbar: React.FC<{
     useContext(WorkbookContext);
   const contextRef = useRef(context);
   const containerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const isProfessional = settings.toolbarLayout === "professional";
+  const effectiveRibbonTabs = useMemo(
+    () =>
+      settings.toolbarRibbonTabs.length > 0
+        ? settings.toolbarRibbonTabs
+        : defaultProfessionalToolbarTabs,
+    [settings.toolbarRibbonTabs]
+  );
+  const [activeRibbonKey, setActiveRibbonKey] = useState(
+    () => effectiveRibbonTabs[0]?.key ?? "home"
+  );
   const [toolbarWrapIndex, setToolbarWrapIndex] = useState(-1); // -1 means pending for item location calculation
   const [itemLocations, setItemLocations] = useState<number[]>([]);
   const { showDialog, hideDialog } = useDialog();
@@ -158,11 +173,17 @@ const Toolbar: React.FC<{
 
   // rerenders the entire toolbar and trigger recalculation of item locations
   useEffect(() => {
+    if (isProfessional) return;
     setToolbarWrapIndex(-1);
-  }, [settings.toolbarItems, settings.customToolbarItems]);
+  }, [
+    settings.toolbarItems,
+    settings.customToolbarItems,
+    isProfessional,
+  ]);
 
   // recalculate item locations
   useEffect(() => {
+    if (isProfessional) return;
     if (toolbarWrapIndex === -1) {
       const container = containerRef.current!;
       if (!container) return;
@@ -177,10 +198,11 @@ const Toolbar: React.FC<{
       }
       setItemLocations(locations);
     }
-  }, [toolbarWrapIndex, sheetWidth]);
+  }, [toolbarWrapIndex, sheetWidth, isProfessional]);
 
   // calculate the position after which items should be wrapped
   useEffect(() => {
+    if (isProfessional) return;
     if (itemLocations.length === 0) return;
     const container = containerRef.current!;
     if (!container) return;
@@ -197,7 +219,54 @@ const Toolbar: React.FC<{
         break;
       }
     }
-  }, [itemLocations, setMoreItems, settings.toolbarItems.length, sheetWidth]);
+  }, [
+    itemLocations,
+    setMoreItems,
+    settings.toolbarItems.length,
+    sheetWidth,
+    isProfessional,
+  ]);
+
+  useEffect(() => {
+    if (
+      effectiveRibbonTabs.length > 0 &&
+      !effectiveRibbonTabs.some((t) => t.key === activeRibbonKey)
+    ) {
+      setActiveRibbonKey(effectiveRibbonTabs[0].key);
+    }
+  }, [effectiveRibbonTabs, activeRibbonKey]);
+
+  useEffect(() => {
+    if (isProfessional) {
+      setMoreItems(null);
+    }
+  }, [activeRibbonKey, isProfessional, setMoreItems]);
+
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const sync = () => {
+      setContext((draft) => {
+        const h = el.offsetHeight;
+        if (draft.toolbarHeight !== h) {
+          draft.toolbarHeight = h;
+        }
+      });
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+    };
+  }, [
+    setContext,
+    isProfessional,
+    activeRibbonKey,
+    settings.toolbarItems,
+    settings.customToolbarItems,
+    settings.toolbarLayout,
+  ]);
 
   const getToolbarItem = useCallback(
     (name: string, i: number) => {
@@ -1463,8 +1532,72 @@ const Toolbar: React.FC<{
     ]
   );
 
+  const activeRibbonTab = effectiveRibbonTabs.find(
+    (t) => t.key === activeRibbonKey
+  );
+  const activeRibbonItems = activeRibbonTab?.items ?? [];
+
+  if (isProfessional) {
+    return (
+      <header
+        ref={headerRef}
+        className="fortune-toolbar-professional"
+        aria-label={toolbar.toolbar}
+      >
+        <nav className="fortune-toolbar-tabs" role="tablist">
+          {effectiveRibbonTabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.key}
+              role="tab"
+              aria-selected={activeRibbonKey === tab.key}
+              tabIndex={activeRibbonKey === tab.key ? 0 : -1}
+              className={
+                activeRibbonKey === tab.key
+                  ? "fortune-toolbar-tab fortune-toolbar-tab-active"
+                  : "fortune-toolbar-tab"
+              }
+              onClick={() => setActiveRibbonKey(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="fortune-toolbar-ribbon-panel" role="tabpanel">
+          <div
+            className="fortune-toolbar-ribbon-scroll"
+            role="toolbar"
+            aria-label={toolbar.toolbar}
+          >
+            {settings.customToolbarItems.map((n) => {
+              return (
+                <CustomButton
+                  tooltip={n.tooltip}
+                  onClick={n.onClick}
+                  key={n.key}
+                  icon={n.icon}
+                  iconName={n.iconName}
+                >
+                  {n.children}
+                </CustomButton>
+              );
+            })}
+            {settings.customToolbarItems?.length > 0 ? (
+              <Divider key="customDivider" />
+            ) : null}
+            {activeRibbonItems.map((name, i) => (
+              <React.Fragment key={`${activeRibbonKey}-${i}-${name}`}>
+                {getToolbarItem(name, i)}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </header>
+    );
+  }
+
   return (
-    <header>
+    <header ref={headerRef}>
       <div
         ref={containerRef}
         className="fortune-toolbar"

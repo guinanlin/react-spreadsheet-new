@@ -159,6 +159,25 @@ export class MindMapStore {
     });
   };
 
+  /** 清除所有手动坐标与拖拽中的位置，按树结构重新自动排版（可撤销） */
+  resetAutomaticLayout = () => {
+    const snapshot = this.getCurrentState();
+    const present = snapshot.history.present;
+    const nextNodes: Record<string, MindMapNode> = {};
+    for (const [id, node] of Object.entries(present.nodes)) {
+      const { manualX: _x, manualY: _y, ...rest } = node;
+      nextNodes[id] = rest;
+    }
+    this.subject.next({
+      ...snapshot,
+      dragPositions: {},
+      history: pushHistory(snapshot, {
+        ...present,
+        nodes: nextNodes,
+      }),
+    });
+  };
+
   addChild = (parentId: NodeId) => {
     const snapshot = this.getCurrentState();
     const parent = snapshot.history.present.nodes[parentId];

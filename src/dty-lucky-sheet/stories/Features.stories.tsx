@@ -66,6 +66,17 @@ export default {
       description: '自定义工具栏按钮数组，可在工具栏左侧添加自定义功能按钮',
       control: 'object',
     },
+    toolbarLayout: {
+      description:
+        '工具栏布局：`classic` 为经典单行工具栏，`professional` 为 Tab 分组的专业工具栏',
+      control: 'radio',
+      options: ['classic', 'professional'],
+    },
+    toolbarRibbonTabs: {
+      description:
+        '专业工具栏 Tab 配置（每项包含 key、label、items）；留空则使用内置默认分组',
+      control: 'object',
+    },
     hooks: {
       description: '生命周期钩子函数集合，可监听和控制各种操作行为',
       control: 'object',
@@ -313,6 +324,73 @@ ToolbarDemo.parameters = {
 - 数据提交按钮
 - 自定义格式化工具
 - 业务特定操作
+      `.trim(),
+    },
+  },
+};
+
+/**
+ * 专业工具栏演示 - Tab 分组（类似腾讯文档 / Excel）
+ *
+ * 通过 `toolbarLayout="professional"` 启用；未传 `toolbarRibbonTabs` 时使用内置默认 Tab。
+ */
+export const ToolbarProfessionalDemo: StoryFn<typeof DtyLuckySheet> = () => {
+  const [data, setData] = useState<Sheet[]>(() =>
+    JSON.parse(JSON.stringify([cell]))
+  );
+
+  const handleSaveTemplate = useCallback(() => {
+    console.log("保存模板被点击了！");
+    console.log("当前表格数据：", data);
+    alert(
+      "保存模板功能被触发！\n\n查看控制台可以看到当前表格数据。\n\n实际使用时，这里可以调用 API 保存模板到服务器。"
+    );
+  }, [data]);
+
+  const onChange = useCallback((d: Sheet[]) => {
+    setData(d);
+  }, []);
+
+  return (
+    <div style={{ width: "100%", height: "100vh" }}>
+      <DtyLuckySheet
+        data={data}
+        onChange={onChange}
+        allowEdit={true}
+        showToolbar={true}
+        showFormulaBar={true}
+        showSheetTabs={true}
+        toolbarLayout="professional"
+        customToolbarItems={[
+          {
+            key: "save-template",
+            tooltip: "保存模板",
+            icon: <span style={{ fontSize: "16px" }}>💾</span>,
+            onClick: handleSaveTemplate,
+          },
+        ]}
+      />
+    </div>
+  );
+};
+
+ToolbarProfessionalDemo.parameters = {
+  docs: {
+    description: {
+      story: `
+**专业工具栏（Tab 分组）**
+
+- 设置 \`toolbarLayout="professional"\` 启用 Tab + 面板布局。
+- 可选传入 \`toolbarRibbonTabs\` 自定义每个 Tab 下的工具项 id（与内置 \`toolbarItems\` 中的 id 一致）。
+- 不传 \`toolbarRibbonTabs\` 时，使用组件内置的默认分组（开始 / 插入 / 数据 / 视图 / 工具）。
+
+\`\`\`tsx
+<DtyLuckySheet
+  data={data}
+  onChange={onChange}
+  toolbarLayout="professional"
+/>
+\`\`\`
       `.trim(),
     },
   },

@@ -122,6 +122,13 @@ export type Hooks = {
   afterUpdateSheetName?: (id: string, oldName: string, newName: string) => void;
 };
 
+/** 专业工具栏单个 Tab 的工具项（与 `toolbarItems` 中的 id 一致，可用 `|` 分隔） */
+export type ToolbarRibbonTab = {
+  key: string;
+  label: string;
+  items: string[];
+};
+
 export type Settings = {
   column?: number;
   row?: number;
@@ -156,7 +163,70 @@ export type Settings = {
     onClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void;
   }[];
   currency?: string;
+  /** 经典工具栏：单行；专业工具栏：Tab + 分组面板 */
+  toolbarLayout?: "classic" | "professional";
+  /** 专业工具栏 Tab 配置；为空则使用内置默认分组 */
+  toolbarRibbonTabs?: ToolbarRibbonTab[];
 };
+
+/** 内置专业工具栏默认分组（可被 `toolbarRibbonTabs` 覆盖） */
+export const defaultProfessionalToolbarTabs: ToolbarRibbonTab[] = [
+  {
+    key: "home",
+    label: "开始",
+    items: [
+      "undo",
+      "redo",
+      "format-painter",
+      "clear-format",
+      "|",
+      "font",
+      "font-size",
+      "|",
+      "bold",
+      "italic",
+      "underline",
+      "strike-through",
+      "|",
+      "font-color",
+      "background",
+      "border",
+      "merge-cell",
+    ],
+  },
+  {
+    key: "insert",
+    label: "插入",
+    items: ["link", "image", "comment"],
+  },
+  {
+    key: "data",
+    label: "数据",
+    items: [
+      "filter",
+      "quick-formula",
+      "dataVerification",
+      "splitColumn",
+      "locationCondition",
+    ],
+  },
+  {
+    key: "view",
+    label: "视图",
+    items: [
+      "freeze",
+      "horizontal-align",
+      "vertical-align",
+      "text-wrap",
+      "text-rotation",
+    ],
+  },
+  {
+    key: "tools",
+    label: "工具",
+    items: ["screenshot", "search", "conditionFormat"],
+  },
+];
 
 export const defaultSettings: Required<Settings> = {
   column: 60, // 空表格默认的列数量
@@ -288,4 +358,7 @@ export const defaultSettings: Required<Settings> = {
   hooks: {},
   customToolbarItems: [],
   currency: "¥",
+  toolbarLayout: "classic",
+  /** 空数组表示使用 `defaultProfessionalToolbarTabs` */
+  toolbarRibbonTabs: [],
 };

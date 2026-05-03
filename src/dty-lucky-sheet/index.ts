@@ -12,7 +12,8 @@ export type {
 } from "./core/types";
 
 export type { Context } from "./core/context";
-export type { Settings } from "./core/settings";
+export type { Settings, ToolbarRibbonTab } from "./core/settings";
+export { defaultProfessionalToolbarTabs } from "./core/settings";
 
 // 导出 WorkbookInstance 以便访问完整的 API
 export type { WorkbookInstance } from "./components/Workbook";

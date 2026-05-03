@@ -1,5 +1,13 @@
 export type NodeId = string;
 
+/**
+ * 节点连线的整体策略（传给 DtyMindMap 的 edgeLinkMode）
+ * - curved-all：全部为平滑贝塞尔曲线
+ * - orthogonal-all：全部为折线（单子节点且与父同高时为水平直线）
+ * - mixed-root-curved：仅「根 → 一级子节点」为曲线，更深层级为折线
+ */
+export type MindMapEdgeLinkMode = "curved-all" | "orthogonal-all" | "mixed-root-curved";
+
 /** 节点底部自定义属性：纯标签 "委外" 或键值 "工艺: 委外电镀" */
 export type NodeAttribute =
   | { label: string }

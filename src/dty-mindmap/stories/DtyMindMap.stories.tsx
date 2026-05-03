@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { DtyMindMap } from "../DtyMindMap";
 import { DEFAULT_MIND_MAP_DATA } from "../constants";
+import { RD_PROCESS_INITIAL_DATA } from "./rd-process-initial-data";
 
 const meta: Meta<typeof DtyMindMap> = {
   title: "dty-mindmap/DtyMindMap",
@@ -19,6 +20,10 @@ const meta: Meta<typeof DtyMindMap> = {
     showCanvasControls: { control: "boolean" },
     height: { control: "text" },
     width: { control: "text" },
+    edgeLinkMode: {
+      control: "select",
+      options: ["curved-all", "orthogonal-all", "mixed-root-curved"],
+    },
   },
 };
 
@@ -38,43 +43,11 @@ export const Dark: Story = {
   },
 };
 
-/** 自定义初始数据 */
+/** 自定义初始数据：产品研发流程（多级树）；根→一级为曲线，更深层为折线 */
 export const WithInitialData: Story = {
   args: {
-    initialData: {
-      rootId: "root",
-      nodes: {
-        root: {
-          id: "root",
-          text: "项目规划",
-          parentId: null,
-          children: ["n1", "n2", "n3"],
-          isExpanded: true,
-          depth: 0,
-        },
-        n1: {
-          id: "n1",
-          text: "需求分析",
-          parentId: "root",
-          children: [],
-          isExpanded: true,
-        },
-        n2: {
-          id: "n2",
-          text: "技术方案",
-          parentId: "root",
-          children: [],
-          isExpanded: true,
-        },
-        n3: {
-          id: "n3",
-          text: "排期与资源",
-          parentId: "root",
-          children: [],
-          isExpanded: true,
-        },
-      },
-    },
+    initialData: RD_PROCESS_INITIAL_DATA,
+    edgeLinkMode: "mixed-root-curved",
   },
 };
 
