@@ -11,6 +11,36 @@ import freeze from "./data/freeze";
 import dataVerification from "./data/dataVerification";
 import protectedData from "./data/protected";
 
+const styledPasteTargetSheet: Sheet = {
+  name: "样式",
+  id: "sheet_style_target",
+  order: 1,
+  status: 0,
+  celldata: [
+    {
+      r: 0,
+      c: 0,
+      v: {
+        v: "粘贴区（支持外部 Excel 样式）",
+        m: "粘贴区（支持外部 Excel 样式）",
+        bg: "#f3f3f3",
+        bl: 1,
+      },
+    },
+    {
+      r: 1,
+      c: 0,
+      v: {
+        v: "请从左侧或 Excel 复制后粘贴到这里",
+        m: "请从左侧或 Excel 复制后粘贴到这里",
+        it: 1,
+      },
+    },
+  ],
+  row: 30,
+  column: 15,
+};
+
 export default {
   title: "DtyLuckySheet/Features",
   component: DtyLuckySheet,
@@ -432,7 +462,7 @@ StyledBasic.parameters = {
 };
 // @ts-ignore
 StyledBasic.args = {
-  data: [cellStyled],
+  data: [cellStyled, styledPasteTargetSheet],
   allowEdit: true,
 };
 

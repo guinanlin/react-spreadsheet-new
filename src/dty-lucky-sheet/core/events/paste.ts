@@ -16,7 +16,7 @@ import { hasPartMC, isRealNum } from "../modules/validation";
 import { getBorderInfoCompute } from "../modules/border";
 import { expandRowsAndColumns, storeSheetParamALL } from "../modules/sheet";
 import { jfrefreshgrid } from "../modules/refresh";
-import { setRowHeight } from "../api";
+import { setRowHeight, setColumnWidth } from "../api";
 import { CFSplitRange } from "../modules";
 import clipboard from "../modules/clipboard";
 import { setFormulaCellInfo } from "../modules/formulaHelper";
@@ -1709,15 +1709,41 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
         let r = 0;
         const borderInfo: any = {};
         const styleInner = ele.querySelectorAll("style")[0]?.innerHTML || "";
-        const patternReg = /{([^}]*)}/g;
-        const patternStyle = styleInner.match(patternReg);
-        const nameReg = /^[^\t].*/gm;
-        const patternName = _.initial(styleInner.match(nameReg));
-        const allStyleList =
-          patternName.length === patternStyle?.length &&
-          typeof patternName === typeof patternStyle
-            ? _.fromPairs(_.zip(patternName, patternStyle))
-            : {};
+        const parseCssMap = (cssText: string): Record<string, string> => {
+          const cssMap: Record<string, string> = {};
+          if (!cssText) return cssMap;
+          // Excel/WPS wraps <style> content with <!-- --> HTML comment markers;
+          // strip them so the first selector is not corrupted.
+          const cleanedCss = cssText.replace(/<!--/g, "").replace(/-->/g, "");
+          const reg = /([^{]+)\{([^}]*)\}/g;
+          let match = reg.exec(cleanedCss);
+          while (match) {
+            const selector = _.trim(match[1]);
+            const body = _.trim(match[2]);
+            if (selector && body) {
+              cssMap[selector] = body;
+            }
+            match = reg.exec(cleanedCss);
+          }
+          return cssMap;
+        };
+        const allStyleList = parseCssMap(styleInner);
+        const parseStyleDeclaration = (
+          styleText: string
+        ): Record<string, string> => {
+          const styles: Record<string, string> = {};
+          if (!styleText) return styles;
+          const declarations = styleText.split(";");
+          _.forEach(declarations, (declaration: string) => {
+            const separatorIndex = declaration.indexOf(":");
+            if (separatorIndex <= 0) return;
+            const key = _.trim(declaration.slice(0, separatorIndex)).toLowerCase();
+            const value = _.trim(declaration.slice(separatorIndex + 1));
+            if (!key || !value) return;
+            styles[key] = value;
+          });
+          return styles;
+        };
 
         const index = getSheetIndex(ctx, ctx.currentSheetId);
         if (!_.isNil(index)) {
@@ -1735,17 +1761,34 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
             let c = 0;
             const targetR = ctx.luckysheet_select_save![0].row[0] + r;
 
-            const targetRowHeight = !_.isNil(tr.getAttribute("height"))
-              ? parseInt(tr.getAttribute("height") as string, 10)
-              : null;
+            // Parse row height from attribute OR style (WPS uses style="height:Xpt")
+            let targetRowHeight: number | null = null;
+            const heightAttr = tr.getAttribute("height");
+            if (!_.isNil(heightAttr) && heightAttr !== "") {
+              const parsed = parseInt(heightAttr, 10);
+              if (!Number.isNaN(parsed)) targetRowHeight = parsed;
+            }
+            if (_.isNil(targetRowHeight)) {
+              const styleMatch = tr
+                .getAttribute("style")
+                ?.match(/height:\s*([\d.]+)(pt|px)?/i);
+              if (styleMatch) {
+                const val = parseFloat(styleMatch[1]);
+                const unit = (styleMatch[2] || "pt").toLowerCase();
+                targetRowHeight = Math.round(
+                  unit === "pt" ? (val * 96) / 72 : val
+                );
+              }
+            }
             if (
-              (_.has(ctx.luckysheetfile[index].config!.rowlen, targetR) &&
-                ctx.luckysheetfile[index].config!.rowlen![targetR] !==
-                  targetRowHeight) ||
-              (!_.has(ctx.luckysheetfile[index].config!.rowlen, targetR) &&
-                ctx.luckysheetfile[index].defaultRowHeight !== targetRowHeight)
+              !_.isNil(targetRowHeight) &&
+              (_.has(ctx.luckysheetfile[index].config!.rowlen, targetR)
+                ? ctx.luckysheetfile[index].config!.rowlen![targetR] !==
+                  targetRowHeight
+                : ctx.luckysheetfile[index].defaultRowHeight !==
+                  targetRowHeight)
             ) {
-              rowHeightList[targetR] = targetRowHeight as number;
+              rowHeightList[targetR] = targetRowHeight;
             }
 
             _.forEach(tr.querySelectorAll("td"), (td) => {
@@ -1761,20 +1804,23 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
                 // @ts-ignore
                 [cell.m, cell.ct, cell.v] = mask;
               }
-              const styleString =
-                typeof allStyleList[`.${className}`] === "string"
-                  ? allStyleList[`.${className}`]
-                      .substring(1, allStyleList[`.${className}`].length - 1)
-                      .split("\n\t")
-                  : [];
-              const styles: Record<string, string> = {};
-              _.forEach(styleString, (s) => {
-                const styleList = s.split(":");
-                styles[styleList[0]] = styleList?.[1].replace(";", "");
+              const classNameList = className
+                .split(/\s+/)
+                .map((name: string) => _.trim(name))
+                .filter(Boolean);
+              // td tag style is the base; class-specific style takes precedence
+              const tdTagStyles = parseStyleDeclaration(allStyleList.td || "");
+              const styles: Record<string, string> = { ...tdTagStyles };
+              _.forEach(classNameList, (singleClassName: string) => {
+                const classStyle = allStyleList[`.${singleClassName}`];
+                if (!classStyle) return;
+                Object.assign(styles, parseStyleDeclaration(classStyle));
               });
               if (!_.isNil(styles.border)) td.style.border = styles.border;
               let bg: string | undefined =
-                td.style.backgroundColor || styles.background;
+                td.style.backgroundColor ||
+                styles["background-color"] ||
+                styles.background;
               if (bg === "rgba(0, 0, 0, 0)" || _.isEmpty(bg)) {
                 bg = undefined;
               }
@@ -1782,12 +1828,13 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
               cell.bg = bg;
 
               const fontWight = td.style.fontWeight;
+              const styleFontWeight = styles["font-weight"] || "";
               cell.bl =
                 (fontWight.toString() === "400" ||
                   fontWight === "normal" ||
                   _.isEmpty(fontWight)) &&
                 !_.includes(styles["font-style"], "bold") &&
-                (!styles["font-weight"] || styles["font-weight"] === "400")
+                (styleFontWeight === "" || styleFontWeight === "400")
                   ? 0
                   : 1;
 
@@ -1798,7 +1845,9 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
                   ? 0
                   : 1;
 
-              cell.un = !_.includes(styles["text-decoration"], "underline")
+              const textDecoration =
+                styles["text-decoration"] || styles["text-decoration-line"] || "";
+              cell.un = !_.includes(textDecoration, "underline")
                 ? undefined
                 : 1;
 
@@ -1835,13 +1884,10 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
                 cell.ht = 1;
               }
 
-              const regex = /vertical-align:\s*(.*?);/;
               const vt =
                 td.style.verticalAlign ||
                 styles["vertical-align"] ||
-                (!_.isNil(allStyleList.td) &&
-                  allStyleList.td.match(regex).length > 0 &&
-                  allStyleList.td.match(regex)[1]) ||
+                tdTagStyles["vertical-align"] ||
                 "top";
               if (vt === "middle") {
                 cell.vt = 0;
@@ -1995,6 +2041,50 @@ export function handlePaste(ctx: Context, e: ClipboardEvent) {
             r += 1;
           });
           setRowHeight(ctx, rowHeightList);
+
+          // Apply column widths from <col> tags
+          const colElems = ele.querySelectorAll("table col");
+          if (colElems.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const sheetIdx = index!;
+            if (_.isNil(ctx.luckysheetfile[sheetIdx].config!.columnlen)) {
+              ctx.luckysheetfile[sheetIdx].config!.columnlen = {} as Record<
+                string,
+                number
+              >;
+            }
+            const colWidthMap: Record<string, number> = {};
+            _.forEach(colElems, (col: Element, colIdx: number) => {
+              const targetC =
+                ctx.luckysheet_select_save![0].column[0] + colIdx;
+              let targetColWidth: number | null = null;
+              const widthAttr = col.getAttribute("width");
+              if (widthAttr !== null && widthAttr !== "") {
+                const parsed = parseInt(widthAttr, 10);
+                if (!Number.isNaN(parsed) && parsed > 0)
+                  targetColWidth = parsed;
+              }
+              if (_.isNil(targetColWidth)) {
+                const styleMatch = col
+                  .getAttribute("style")
+                  ?.match(/width:\s*([\d.]+)(pt|px)?/i);
+                if (styleMatch) {
+                  const val = parseFloat(styleMatch[1]);
+                  const unit = (styleMatch[2] || "pt").toLowerCase();
+                  const px = Math.round(
+                    unit === "pt" ? (val * 96) / 72 : val
+                  );
+                  if (px > 0) targetColWidth = px;
+                }
+              }
+              if (!_.isNil(targetColWidth)) {
+                colWidthMap[targetC] = targetColWidth as number;
+              }
+            });
+            if (Object.keys(colWidthMap).length > 0) {
+              setColumnWidth(ctx, colWidthMap);
+            }
+          }
         }
 
         ctx.luckysheet_selection_range = [];
