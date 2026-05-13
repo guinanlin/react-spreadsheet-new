@@ -288,6 +288,57 @@ export const ToolbarDemo: StoryFn<typeof DtyLuckySheet> = () => {
     JSON.parse(JSON.stringify([cell]))
   );
   
+  const handleCaptureSheet = useCallback(
+    (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      const workbookContainer =
+        event.currentTarget.closest(".fortune-container") ??
+        document.querySelector(".fortune-container");
+      const sourceCanvas = workbookContainer?.querySelector<HTMLCanvasElement>(
+        ".fortune-sheet-canvas"
+      );
+
+      if (!sourceCanvas) {
+        alert("未找到可截图的表格画布，请稍后重试。");
+        return;
+      }
+
+      const maxExportWidth = 1400;
+      const shouldResize = sourceCanvas.width > maxExportWidth;
+      let exportCanvas = sourceCanvas;
+
+      if (shouldResize) {
+        const scale = maxExportWidth / sourceCanvas.width;
+        const resizedCanvas = document.createElement("canvas");
+        resizedCanvas.width = Math.max(1, Math.round(sourceCanvas.width * scale));
+        resizedCanvas.height = Math.max(1, Math.round(sourceCanvas.height * scale));
+        const resizedCtx = resizedCanvas.getContext("2d");
+        if (resizedCtx) {
+          resizedCtx.imageSmoothingEnabled = true;
+          resizedCtx.drawImage(
+            sourceCanvas,
+            0,
+            0,
+            sourceCanvas.width,
+            sourceCanvas.height,
+            0,
+            0,
+            resizedCanvas.width,
+            resizedCanvas.height
+          );
+          exportCanvas = resizedCanvas;
+        }
+      }
+
+      const imageUrl = exportCanvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      downloadLink.href = imageUrl;
+      downloadLink.download = `toolbar-demo-sheet-${timestamp}.png`;
+      downloadLink.click();
+    },
+    []
+  );
+
   const handleSaveTemplate = useCallback(() => {
     console.log('保存模板被点击了！');
     console.log('当前表格数据：', data);
@@ -313,7 +364,13 @@ export const ToolbarDemo: StoryFn<typeof DtyLuckySheet> = () => {
             tooltip: '保存模板',
             icon: <span style={{ fontSize: '16px' }}>💾</span>, // 使用 emoji 作为图标
             onClick: handleSaveTemplate,
-          }
+          },
+          {
+            key: "capture-sheet",
+            tooltip: "截图（导出 PNG）",
+            icon: <span style={{ fontSize: "16px" }}>📷</span>,
+            onClick: handleCaptureSheet,
+          },
         ]}
       />
     </div>
@@ -329,6 +386,7 @@ ToolbarDemo.parameters = {
 
 **演示功能：**
 - 💾 **保存模板按钮**：位于工具栏最左侧的自定义按钮
+- 📷 **截图按钮**：一键把当前表格区域导出为 PNG 图片并自动下载
 - 🎯 **点击处理**：演示如何响应按钮点击事件并访问当前表格数据
 - 🔧 **完全可定制**：支持自定义图标、提示文字和处理逻辑
 

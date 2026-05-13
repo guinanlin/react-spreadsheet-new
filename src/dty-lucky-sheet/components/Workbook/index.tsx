@@ -151,7 +151,41 @@ const Workbook = React.forwardRef<WorkbookInstance, Settings & AdditionalProps>(
         newData: SheetType,
         index: number
       ): CellMatrix | null => {
-        const { celldata, row, column } = newData;
+        const { celldata, row, column, data: matrixIn } = newData;
+        const hasCelldata = Array.isArray(celldata) && celldata.length > 0;
+        const hasMatrix =
+          Array.isArray(matrixIn) &&
+          matrixIn.length > 0 &&
+          (matrixIn[0]?.length ?? 0) > 0;
+
+        /** 仅有 data 矩阵而无 celldata（如外部 Excel 导入）时，必须先落盘矩阵，否则会按空 celldata 铺成 null 栅格。 */
+        if (!hasCelldata && hasMatrix) {
+          const dr = matrixIn.length;
+          const dc = matrixIn[0]!.length;
+          let lastRowNum = dr;
+          let lastColNum = dc;
+          if (row != null && column != null && row > 0 && column > 0) {
+            lastRowNum = Math.max(lastRowNum, row);
+            lastColNum = Math.max(lastColNum, column);
+          } else {
+            lastRowNum = Math.max(lastRowNum, draftCtx.defaultrowNum);
+            lastColNum = Math.max(lastColNum, draftCtx.defaultcolumnNum);
+          }
+          if (lastRowNum && lastColNum) {
+            const expandedData: SheetType["data"] = _.times(lastRowNum, (r) =>
+              _.times(lastColNum, (c) =>
+                r < dr && c < dc ? matrixIn[r]?.[c] ?? null : null
+              )
+            );
+            draftCtx.luckysheetfile = produce(draftCtx.luckysheetfile, (d) => {
+              d[index!].data = expandedData;
+              delete d[index!].celldata;
+              return d;
+            });
+            return expandedData;
+          }
+        }
+
         const lastRow = _.maxBy<CellWithRowAndCol>(celldata, "r");
         const lastCol = _.maxBy(celldata, "c");
         let lastRowNum = (lastRow?.r ?? 0) + 1;
