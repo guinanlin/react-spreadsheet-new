@@ -3,6 +3,11 @@ import { Meta, StoryFn } from "@storybook/react";
 import { DtyLuckySheet, DtyLuckySheetInstance } from "../components/DtyLuckySheet";
 import type { Sheet } from "../core/types";
 import { parseExcelFile } from "./utils/excel-import";
+import {
+  salesOrderFormSheet,
+  SALES_ORDER_BODY_START_ROW,
+} from "./data/sales-order-form";
+import { sheetFormToMarkdown } from "./utils/sheet-to-markdown";
 
 export default {
   title: "DtyLuckySheet/API",
@@ -341,6 +346,154 @@ export const ImportExcel: StoryFn<typeof DtyLuckySheet> = () => {
           onChange={onChange}
           allowEdit
         />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * 用户场景：表单式工作表（表头区 + 明细表体）导出为 Markdown。
+ */
+export const ExportToMarkdown: StoryFn<typeof DtyLuckySheet> = () => {
+  const ref = useRef<DtyLuckySheetInstance>(null);
+  const [data, setData] = useState<Sheet[]>([
+    { ...salesOrderFormSheet, id: "api-export-md" },
+  ]);
+  const [markdown, setMarkdown] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const onChange = useCallback((d: Sheet[]) => {
+    setData(d);
+  }, []);
+
+  const handleExport = () => {
+    const sheet = ref.current?.getSheet();
+    let matrix = sheet?.data;
+    if (!matrix?.length && sheet?.celldata?.length) {
+      matrix = ref.current?.celldataToData(
+        sheet.celldata,
+        sheet.row,
+        sheet.column
+      ) ?? undefined;
+    }
+    setMarkdown(
+      sheetFormToMarkdown(matrix, {
+        bodyStartRow: SALES_ORDER_BODY_START_ROW,
+      })
+    );
+    setCopied(false);
+  };
+
+  const handleCopy = async () => {
+    if (!markdown) return;
+    try {
+      await navigator.clipboard.writeText(markdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100vh",
+      }}
+    >
+      <div
+        style={{
+          flexShrink: 0,
+          padding: 8,
+          background: "#f5f5f5",
+          borderBottom: "1px solid #ddd",
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleExport}
+          style={{
+            padding: "6px 16px",
+            background: "#1890ff",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            marginRight: 12,
+          }}
+        >
+          生成 Markdown
+        </button>
+        <button
+          type="button"
+          disabled={!markdown}
+          onClick={handleCopy}
+          style={{
+            padding: "6px 16px",
+            background: markdown ? "#52c41a" : "#ccc",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: markdown ? "pointer" : "not-allowed",
+          }}
+        >
+          {copied ? "已复制" : "复制 Markdown"}
+        </button>
+        <span style={{ marginLeft: 12, color: "#666", fontSize: 13 }}>
+          含表头区（公司信息、订单字段）与表体区（明细清单）；编辑后点击「生成 Markdown」。
+        </span>
+      </div>
+      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <DtyLuckySheet
+            ref={ref}
+            data={data}
+            onChange={onChange}
+            allowEdit
+          />
+        </div>
+        {markdown && (
+          <div
+            style={{
+              width: 420,
+              flexShrink: 0,
+              borderLeft: "1px solid #ddd",
+              display: "flex",
+              flexDirection: "column",
+              background: "#fafafa",
+            }}
+          >
+            <div
+              style={{
+                padding: "8px 12px",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#333",
+                borderBottom: "1px solid #eee",
+              }}
+            >
+              Markdown 预览
+            </div>
+            <pre
+              style={{
+                flex: 1,
+                margin: 0,
+                padding: 12,
+                overflow: "auto",
+                fontSize: 12,
+                lineHeight: 1.5,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-all",
+                fontFamily: "ui-monospace, monospace",
+              }}
+            >
+              {markdown}
+            </pre>
+          </div>
+        )}
       </div>
     </div>
   );
